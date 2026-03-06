@@ -1,0 +1,10 @@
+[dotenv@17.2.4] injecting env (4) from .env.local -- tip: ??????  override existing env vars with { override: true }
+[
+  {
+    "id": "00000000-0000-0000-0000-000000000001",
+    "full_name": "Super Admin",
+    "company_id": "ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff",
+    "department_id": "3c16f96d-5c73-4b1b-b1e4-c5f325688f13",
+    "role": "manager"
+  }
+]

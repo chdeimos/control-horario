@@ -1,0 +1,19 @@
+[dotenv@17.2.4] injecting env (4) from .env.local -- tip: ???? add secrets lifecycle management: https://dotenvx.com/ops
+--- REVISI??N DE DATOS DEL MANAGER ---
+Manager: Administrador Demo Company: 739bb925-cd99-4ee8-85b6-f1652bb63631
+
+Empleados en la misma empresa: 3
+- Sandra Corredoira (466cc1c2-395c-49c2-a8c3-754b7d753bae)
+- Fernando de la Rua (58e1e4aa-d197-4136-8b05-cce4c0273521)
+- Natalia Fuentes (39cad15d-80c0-4568-a4a0-8f2b36709eb4)
+
+Buscando fichajes entre 2026-02-10T23:00:00.000Z y 2026-02-11T22:59:59.000Z
+- Fichajes para Sandra Corredoira: 2
+  [work] In: 2026-02-11T07:30:00+00:00 Out: 2026-02-11T12:15:00+00:00 CoID: ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff
+  [work] In: 2026-02-11T14:00:00+00:00 Out: null CoID: ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff
+- Fichajes para Fernando de la Rua: 2
+  [work] In: 2026-02-11T07:30:00+00:00 Out: 2026-02-11T12:15:00+00:00 CoID: ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff
+  [work] In: 2026-02-11T14:00:00+00:00 Out: null CoID: ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff
+- Fichajes para Natalia Fuentes: 2
+  [work] In: 2026-02-11T07:30:00+00:00 Out: 2026-02-11T12:15:00+00:00 CoID: ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff
+  [work] In: 2026-02-11T14:00:00+00:00 Out: null CoID: ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff

@@ -1,0 +1,8 @@
+[dotenv@17.2.4] injecting env (4) from .env.local -- tip: ??????  specify custom .env file path with { path: '/custom/path/.env' }
+--- REGENERANDO Fichajes de Prueba ---
+Detectados 3 empleados. Insertando fichajes...
+??? Fichajes creados para Sandra Corredoira
+??? Fichajes creados para Fernando de la Rua
+??? Fichajes creados para Natalia Fuentes
+
+--- Todo listo ---

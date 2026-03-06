@@ -1,0 +1,23 @@
+[dotenv@17.2.4] injecting env (4) from .env.local -- tip: ???? sync secrets across teammates & machines: https://dotenvx.com/ops
+[
+  {
+    full_name: 'Administrador Demo',
+    company_id: '739bb925-cd99-4ee8-85b6-f1652bb63631',
+    department_id: '285cf124-19e1-4216-bcc6-229552be25d0'
+  },
+  {
+    full_name: 'Sandra Corredoira',
+    company_id: '739bb925-cd99-4ee8-85b6-f1652bb63631',
+    department_id: '285cf124-19e1-4216-bcc6-229552be25d0'
+  },
+  {
+    full_name: 'Fernando de la Rua',
+    company_id: '739bb925-cd99-4ee8-85b6-f1652bb63631',
+    department_id: '285cf124-19e1-4216-bcc6-229552be25d0'
+  },
+  {
+    full_name: 'Natalia Fuentes',
+    company_id: '739bb925-cd99-4ee8-85b6-f1652bb63631',
+    department_id: '285cf124-19e1-4216-bcc6-229552be25d0'
+  }
+]

@@ -1,0 +1,13 @@
+[dotenv@17.2.4] injecting env (4) from .env.local -- tip: ???? prevent building .env in docker: https://dotenvx.com/prebuild
+Profiles: 4
+- Administrador Demo (00000000-0000-0000-0000-000000000001): 1 entries
+  [work] 2026-02-11T18:46:00.218+00:00 -> null
+- Sandra Corredoira (466cc1c2-395c-49c2-a8c3-754b7d753bae): 2 entries
+  [work] 2026-02-11T07:30:00+00:00 -> 2026-02-11T12:15:00+00:00
+  [work] 2026-02-11T14:00:00+00:00 -> null
+- Fernando de la Rua (58e1e4aa-d197-4136-8b05-cce4c0273521): 2 entries
+  [work] 2026-02-11T07:30:00+00:00 -> 2026-02-11T12:15:00+00:00
+  [work] 2026-02-11T14:00:00+00:00 -> null
+- Natalia Fuentes (39cad15d-80c0-4568-a4a0-8f2b36709eb4): 2 entries
+  [work] 2026-02-11T07:30:00+00:00 -> 2026-02-11T12:15:00+00:00
+  [work] 2026-02-11T14:00:00+00:00 -> null

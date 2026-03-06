@@ -1,0 +1,3 @@
+[dotenv@17.2.4] injecting env (4) from .env.local -- tip: ??? audit secrets and track compliance: https://dotenvx.com/ops
+Profiles found: 1
+- ID: 00000000-0000-0000-0000-000000000001, Name: Super Admin, Role: super_admin, CompanyID: null, Status: active, Dept: null

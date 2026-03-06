@@ -1,0 +1,3 @@
+[dotenv@17.2.4] injecting env (4) from .env.local -- tip: ??????  load multiple .env files with { path: ['.env.local', '.env'] }
+Profiles found: 1
+- ID: 00000000-0000-0000-0000-000000000001, Name: Super Admin, Role: manager, CompanyID: ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff, Status: active, Dept: 3c16f96d-5c73-4b1b-b1e4-c5f325688f13

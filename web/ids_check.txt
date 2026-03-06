@@ -1,0 +1,15 @@
+[dotenv@17.2.4] injecting env (4) from .env.local -- tip: ???? prevent committing .env to code: https://dotenvx.com/precommit
+Profiles:
+Administrador Demo: Company=739bb925-cd99-4ee8-85b6-f1652bb63631, Role=manager, ID=00000000-0000-0000-0000-000000000001
+Sandra Corredoira: Company=739bb925-cd99-4ee8-85b6-f1652bb63631, Role=employee, ID=466cc1c2-395c-49c2-a8c3-754b7d753bae
+Fernando de la Rua: Company=739bb925-cd99-4ee8-85b6-f1652bb63631, Role=employee, ID=58e1e4aa-d197-4136-8b05-cce4c0273521
+Natalia Fuentes: Company=739bb925-cd99-4ee8-85b6-f1652bb63631, Role=employee, ID=39cad15d-80c0-4568-a4a0-8f2b36709eb4
+
+Entries:
+UID=00000000-0000-0000-0000-000000000001, Company=739bb925-cd99-4ee8-85b6-f1652bb63631, In=2026-02-11T18:46:00.218+00:00
+UID=466cc1c2-395c-49c2-a8c3-754b7d753bae, Company=ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff, In=2026-02-11T07:30:00+00:00
+UID=466cc1c2-395c-49c2-a8c3-754b7d753bae, Company=ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff, In=2026-02-11T14:00:00+00:00
+UID=58e1e4aa-d197-4136-8b05-cce4c0273521, Company=ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff, In=2026-02-11T07:30:00+00:00
+UID=58e1e4aa-d197-4136-8b05-cce4c0273521, Company=ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff, In=2026-02-11T14:00:00+00:00
+UID=39cad15d-80c0-4568-a4a0-8f2b36709eb4, Company=ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff, In=2026-02-11T07:30:00+00:00
+UID=39cad15d-80c0-4568-a4a0-8f2b36709eb4, Company=ecd4bc7f-53de-4e33-bfd9-a1905bb7d1ff, In=2026-02-11T14:00:00+00:00
