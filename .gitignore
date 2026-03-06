@@ -5,3 +5,4 @@ apk/
 node_modules/
 .env*
 .env.local
+supabase.md
