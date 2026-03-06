@@ -45,7 +45,11 @@ cat << EOF > /etc/docker/daemon.json
   "mtu": 1200,
   "default-address-pools": [{"base":"172.17.0.0/16","size":24}],
   "max-concurrent-downloads": 1,
-  "dns": ["8.8.8.8", "8.8.4.4"]
+  "dns": ["1.1.1.1", "8.8.8.8"],
+  "registry-mirrors": [
+    "https://mirror.gcr.io",
+    "https://huecker.io"
+  ]
 }
 EOF
 
