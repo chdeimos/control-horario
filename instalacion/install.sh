@@ -52,8 +52,8 @@ git clone "$REPO_URL" control-horario
 
 echo "[6/9] Configurando Supabase (Docker) para el dominio $DOMAIN..."
 cd /var/www/control-horario
-git clone --depth 1 https://github.com/supabase/supabase
-cd supabase/docker
+git clone --depth 1 https://github.com/supabase/supabase supabase-docker-repo
+cd supabase-docker-repo/docker
 
 cp .env.example .env
 # Inyectar el dominio externo para correos y autenticación
