@@ -16,8 +16,11 @@ echo "[1/9] Actualizando sistema e instalando dependencias base..."
 apt update && apt upgrade -y
 apt install -y curl git ufw ca-certificates gnupg jq
 
-# Corrección para contenedores con problemas de ruteo IPv6 a Docker Hub
+# Corrección fuerte para contenedores (LXC/Proxmox) con problemas de IPv6 a Docker Hub
 echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf || true
+sysctl -w net.ipv6.conf.all.disable_ipv6=1 || true
+sysctl -w net.ipv6.conf.default.disable_ipv6=1 || true
+sysctl -w net.ipv6.conf.lo.disable_ipv6=1 || true
 
 echo "[2/9] Instalando Docker..."
 install -m 0755 -d /etc/apt/keyrings
@@ -31,6 +34,16 @@ echo \
 
 apt update
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Crear configuración explícita para forzar Docker a no usar IPv6 ni en la resolución
+mkdir -p /etc/docker
+cat << EOF > /etc/docker/daemon.json
+{
+  "ipv6": false,
+  "ip6tables": false
+}
+EOF
+
 systemctl start docker || true
 
 echo "[3/9] Instalando Node.js v20..."
