@@ -89,7 +89,8 @@ sed -i 's/^ENABLE_ANALYTICS=true/ENABLE_ANALYTICS=false/' .env
 sed -i 's/^ENABLE_VECTOR=true/ENABLE_VECTOR=false/' .env
 
 mkdir -p volumes/db/init/
-cp /var/www/control-horario/supabase/seed.sql volumes/db/init/00-seed.sql
+cat /var/www/control-horario/supabase/migrations/*.sql > volumes/db/init/00-schema.sql
+cp /var/www/control-horario/supabase/seed.sql volumes/db/init/01-seed.sql
 chmod -R 777 volumes/
 
 echo "Levantando servicios de Supabase en background..."
