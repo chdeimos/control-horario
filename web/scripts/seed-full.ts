@@ -48,7 +48,7 @@ async function setup() {
     if (jError && jError.message !== 'Email already exists') {
         console.error('Error juan auth:', jError.message)
     } else {
-        const juanId = juanAuth?.user?.id || (await supabase.auth.admin.listUsers()).users.find(u => u.email === 'juan@demo.com')?.id
+        const juanId = juanAuth?.user?.id || (await supabase.auth.admin.listUsers()).data.users.find(u => u.email === 'juan@demo.com')?.id
         if (juanId) {
             await supabase.from('profiles').upsert({
                 id: juanId,
