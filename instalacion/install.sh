@@ -26,7 +26,6 @@ echo \
 
 apt update
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-systemctl enable docker || true
 systemctl start docker || true
 
 # 3. Instalar Node.js y PM2
