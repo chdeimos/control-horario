@@ -42,7 +42,9 @@ cat << EOF > /etc/docker/daemon.json
 {
   "ipv6": false,
   "ip6tables": false,
-  "mtu": 1400,
+  "mtu": 1200,
+  "default-address-pools": [{"base":"172.17.0.0/16","size":24}],
+  "max-concurrent-downloads": 1,
   "dns": ["8.8.8.8", "8.8.4.4"]
 }
 EOF
