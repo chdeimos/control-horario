@@ -84,6 +84,10 @@ cp .env.example .env
 # Inyectar el dominio externo para correos y autenticación
 sed -i "s|API_EXTERNAL_URL=http://localhost:8000|API_EXTERNAL_URL=${PROTOCOL}://${DOMAIN}|g" .env
 
+# Desactivar Analytics y Vector para ahorrar RAM y evitar que el contenedor colapse
+sed -i 's/^ENABLE_ANALYTICS=true/ENABLE_ANALYTICS=false/' .env
+sed -i 's/^ENABLE_VECTOR=true/ENABLE_VECTOR=false/' .env
+
 mkdir -p volumes/db/init/
 cp /var/www/control-horario/supabase/seed.sql volumes/db/init/00-seed.sql
 chmod -R 777 volumes/
