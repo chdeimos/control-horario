@@ -36,11 +36,14 @@ apt update
 apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Crear configuración explícita para forzar Docker a no usar IPv6 ni en la resolución
+# y configurar un MTU de 1400 y DNS 8.8.8.8 para evitar cortes TLS (MTU drops) en Cloudflare
 mkdir -p /etc/docker
 cat << EOF > /etc/docker/daemon.json
 {
   "ipv6": false,
-  "ip6tables": false
+  "ip6tables": false,
+  "mtu": 1400,
+  "dns": ["8.8.8.8", "8.8.4.4"]
 }
 EOF
 
