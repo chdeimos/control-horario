@@ -1,0 +1,7 @@
+# Ignorar la carpeta con los ejecutables (APKs de gran tamaño)
+apk/
+
+# Ignorar node_modules y otros si se ejecutan a nivel raiz
+node_modules/
+.env*
+.env.local
