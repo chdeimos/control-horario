@@ -14,7 +14,7 @@ if (fs.existsSync(envPath)) {
 
 async function getColumns() {
     const supabase = createAdminClient()
-    const { data: userCols } = await supabase.rpc('snapshot_columns', { t_schema: 'auth', t_name: 'users' }).catch(() => ({ data: null }));
+    const { data: userCols } = await supabase.rpc('snapshot_columns', { t_schema: 'auth', t_name: 'users' });
 
     // Actually, since I can't easily add a new RPC just for this, I'll use a direct query via a temporary script that uses the client
     const { data, error } = await supabase.from('information_schema.columns' as any)
