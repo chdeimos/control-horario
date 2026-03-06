@@ -86,6 +86,7 @@ sed -i "s|API_EXTERNAL_URL=http://localhost:8000|API_EXTERNAL_URL=${PROTOCOL}://
 
 mkdir -p volumes/db/init/
 cp /var/www/control-horario/supabase/seed.sql volumes/db/init/00-seed.sql
+chmod -R 777 volumes/
 
 echo "Levantando servicios de Supabase en background..."
 docker compose up -d
