@@ -6,3 +6,14 @@ node_modules/
 .env*
 .env.local
 supabase.md
+tablet-clocking-feature.md
+mobile-app-development.md
+DESING_GUIDELINES.md
+ANALISIS_CRON.md
+auth_users_cols.txt
+auth_users_count.txt
+companies_rls_check.txt
+
+# Ignorar los agentes de ia
+.agent/
+
