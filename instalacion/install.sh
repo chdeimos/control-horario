@@ -16,6 +16,9 @@ echo "[1/9] Actualizando sistema e instalando dependencias base..."
 apt update && apt upgrade -y
 apt install -y curl git ufw ca-certificates gnupg jq
 
+# Corrección para contenedores con problemas de ruteo IPv6 a Docker Hub
+echo "precedence ::ffff:0:0/96  100" >> /etc/gai.conf || true
+
 echo "[2/9] Instalando Docker..."
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
