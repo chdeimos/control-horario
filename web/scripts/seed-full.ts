@@ -65,7 +65,17 @@ async function setup() {
         }
     }
 
-    // 4. Vincular el perfil actual (admin@example.com)
+    // 4. Crear o buscar Super Admin (admin@example.com)
+    const { data: adminAuth, error: adminErr } = await supabase.auth.admin.createUser({
+        email: 'admin@example.com',
+        password: 'admin123',
+        email_confirm: true
+    })
+
+    if (adminErr && adminErr.message !== 'Email already exists') {
+        console.error('Error admin auth:', adminErr.message)
+    }
+
     const { data: authUsers } = await supabase.auth.admin.listUsers()
     const adminUser = authUsers.users.find(u => u.email === 'admin@example.com')
 
