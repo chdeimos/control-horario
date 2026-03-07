@@ -17,6 +17,19 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 async function setup() {
     console.log('--- Configurando Empresa y Usuarios REALES de Prueba ---')
 
+    // 0. Crear Bucket de Branding para Logos e Imágenes si no existe
+    const { data: bucketData, error: bucketError } = await supabase.storage.createBucket('branding', {
+        public: true,
+        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
+        fileSizeLimit: 5242880 // 5MB
+    })
+
+    if (bucketError && !bucketError.message.includes('already exists')) {
+        console.error('Info Bucket:', bucketError.message)
+    } else {
+        console.log('✓ Storage Bucket "branding" asegurado.')
+    }
+
     // 1. Crear Empresa
     const { data: company, error: cError } = await supabase.from('companies').insert({
         name: 'Empresa Demo',

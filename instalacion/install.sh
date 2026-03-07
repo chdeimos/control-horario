@@ -83,21 +83,29 @@ cd supabase-docker-repo/docker
 cp .env.example .env
 # Inyectar el dominio externo para correos y autenticación
 sed -i "s|API_EXTERNAL_URL=http://localhost:8000|API_EXTERNAL_URL=${PROTOCOL}://${DOMAIN}|g" .env
+echo "GOTRUE_MAILER_EXTERNAL_HOSTS=${DOMAIN}" >> .env
+echo "GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED=true" >> .env
 
 # Desactivar Analytics y Vector para ahorrar RAM y evitar que el contenedor colapse
 sed -i 's/^ENABLE_ANALYTICS=true/ENABLE_ANALYTICS=false/' .env
 sed -i 's/^ENABLE_VECTOR=true/ENABLE_VECTOR=false/' .env
 
+# Copiar las tablas justo al final del proceso base de Supabase (99)
 mkdir -p volumes/db/init/
-cat /var/www/control-horario/supabase/migrations/*.sql > volumes/db/init/00-schema.sql
-cp /var/www/control-horario/supabase/seed.sql volumes/db/init/01-seed.sql
+cat /var/www/control-horario/supabase/migrations/*.sql > volumes/db/init/99-migrations.sql
+# No copiamos seed.sql porque lo haremos vía API con TypeScript para que resuelva dependencias Auth
 chmod -R 777 volumes/
 
 echo "Levantando servicios de Supabase en background..."
 docker compose up -d
 
-echo "Esperando 30 segundos a que la BBDD inicie correctamente..."
-sleep 30
+echo "Esperando 45 segundos a que la BBDD inicie correctamente..."
+sleep 45
+
+# Forzar corrección de columnas faltantes en los buckets Storage
+echo "ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS file_size_limit bigint; ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS allowed_mime_types text[]; ALTER TABLE storage.buckets ADD COLUMN IF NOT EXISTS public boolean DEFAULT false;" | docker compose exec -T db psql -U supabase_admin || true
+docker compose restart rest auth kong imgproxy storage
+sleep 10
 
 ANON_KEY=$(grep "ANON_KEY=" .env | cut -d '=' -f 2)
 SERVICE_KEY=$(grep "SERVICE_ROLE_KEY=" .env | cut -d '=' -f 2)
@@ -113,17 +121,23 @@ NEXT_PUBLIC_APP_URL=${PROTOCOL}://${DOMAIN}
 EOF
 
 npm install
+
+echo "[8/9] Auto-Sembrando Base de Datos..."
+# Ejecutamos el script de Node directamente por API
+npm install -g tsx
+tsx scripts/seed-full.ts || true
+
 npm run build
 
-echo "[8/9] Arrancando FrontEnd con PM2"
+echo "[9/9] Arrancando FrontEnd con PM2"
 pm2 start npm --name "control-horario-web" -- run start
 pm2 save
 pm2 startup || true
 
-echo "[9/9] Auto-Configurando Nginx para enrutamiento Múltiple..."
+echo "[10/10] Auto-Configurando Nginx para enrutamiento Múltiple (Puerto 8080)..."
 cat << EOF > /etc/nginx/sites-available/control-horario
 server {
-    listen 80;
+    listen 8080;
     server_name $DOMAIN;
 
     # 1. Enrutar las APIs de Supabase hacia el contenedor Docker (Puerto 8000)
@@ -161,10 +175,6 @@ echo "    ¡INSTALACIÓN COMPLETADA CON ÉXITO!                                 
 echo "=========================================================================="
 echo "✔ Supabase backend operando y configurado con: ${PROTOCOL}://${DOMAIN}"
 echo "✔ Web App corriendo en puerto 3000 y enrutada en /"
-echo "✔ Nginx como Proxy reverso en el puerto 80"
+echo "✔ Nginx como Proxy reverso escuchando en el puerto 8080"
 echo ""
-echo "📝 SIGUIENTE PASO IMPORTANTE (Seguridad SSL):"
-echo "Ejecuta esto para obtener un certificado HTTPS válido (necesario en Producción):"
-echo "   apt install -y certbot python3-certbot-nginx"
-echo "   certbot --nginx -d $DOMAIN --non-interactive --agree-tos -m tu-email@ejemplo.com"
-echo "=========================================================================="
+echo "📝 Si usas Nginx Proxy Manager, apunta a la IP de este servidor al PUERTO 8080"

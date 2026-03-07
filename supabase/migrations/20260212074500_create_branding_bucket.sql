@@ -1,7 +1,5 @@
--- Create a bucket for company branding
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('branding', 'branding', true)
-ON CONFLICT (id) DO NOTHING;
+-- NOTE: Bucket is now created via TypeScript API during seed-full.ts 
+-- to avoid missing column DB errors.
 
 -- RLS Policies for branding bucket
 -- 1. Public can view logos
