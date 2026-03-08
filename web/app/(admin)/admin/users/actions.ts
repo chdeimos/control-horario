@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { sendCustomAuthEmail } from '@/lib/send-custom-email'
 
 export async function getGlobalUsers() {
     const supabase = await createClient()
@@ -48,11 +49,23 @@ export async function sendUserResetEmail(email: string) {
     const protocol = h.get('x-forwarded-proto') || (host.includes('127.0.0.1') || host.includes('localhost') ? 'http' : 'https')
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+    const supabaseAdmin = createAdminClient()
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'recovery',
+        email: email,
+        options: {
+            redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+        }
     })
 
     if (error) return { error: error.message }
+
+    if (data?.properties?.action_link) {
+        const emailResult = await sendCustomAuthEmail(email, 'recovery', data.properties.action_link)
+        if (emailResult && emailResult.error) {
+            return { error: 'Error al enviar el correo: ' + emailResult.error }
+        }
+    }
 
     return { success: true }
 }

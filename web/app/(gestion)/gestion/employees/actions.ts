@@ -65,8 +65,21 @@ export async function inviteEmployee(formData: FormData) {
 
     const supabaseAdmin = createAdminClient()
 
+    const { headers } = await import('next/headers')
+    let h: any
+    try { h = await headers() } catch { h = headers() }
+    const host = h.get('host') || '127.0.0.1:3000'
+    const protocol = h.get('x-forwarded-proto') || (host.includes('127.0.0.1') || host.includes('localhost') ? 'http' : 'https')
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`
+
     // 1. Invite User
-    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email)
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'invite',
+        email: email,
+        options: {
+            redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+        }
+    })
 
     if (inviteError) {
         if (inviteError.message.includes('already been registered') || inviteError.message.includes('already exists')) {
@@ -103,6 +116,11 @@ export async function inviteEmployee(formData: FormData) {
 
     if (profileError) {
         return { error: `Usuario invitado pero error al crear perfil: ${profileError.message}` }
+    }
+
+    if (inviteData?.properties?.action_link) {
+        const { sendCustomAuthEmail } = await import('@/lib/send-custom-email')
+        await sendCustomAuthEmail(email, 'invite', inviteData.properties.action_link)
     }
 
     revalidatePath('/employees')

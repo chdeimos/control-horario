@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { sendCustomAuthEmail } from '@/lib/send-custom-email'
 
 function validateCIF(cif: string) {
     const value = cif.trim().toUpperCase();
@@ -164,8 +165,12 @@ export async function createCompanyAdmin(companyId: string, formData: FormData) 
 
     // 1. Invite User
     let inviteData = null
-    const { data, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+    const { data, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'invite',
+        email: email,
+        options: {
+            redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+        }
     })
 
     if (inviteError) {
@@ -181,19 +186,35 @@ export async function createCompanyAdmin(companyId: string, formData: FormData) 
                 return { error: 'Este correo electrónico pertenece al Administrador Global de la plataforma. No puede ser usado como administrador de una empresa.' }
             }
 
-            const supabase = await createClient()
-            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+            const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
+                type: 'recovery',
+                email: email,
+                options: {
+                    redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+                }
             })
 
-            if (resetError) return { error: `El usuario ya existe pero no pudimos enviar el correo de recuperación: ${resetError.message}` }
+            if (resetError) return { error: `El usuario ya existe pero no pudimos generar el enlace de recuperación: ${resetError.message}` }
+
+            if (resetData?.properties?.action_link) {
+                const emailResult = await sendCustomAuthEmail(email, 'recovery', resetData.properties.action_link)
+                if (emailResult && emailResult.error) {
+                    console.error("Error enviando email recovery:", emailResult.error)
+                }
+            }
 
             inviteData = { user: existingUser }
         } else {
             return { error: `Error invitando admin: ${inviteError.message}` }
         }
     } else {
-        inviteData = data
+        inviteData = { user: data.user }
+        if (data?.properties?.action_link) {
+            const emailResult = await sendCustomAuthEmail(email, 'invite', data.properties.action_link)
+            if (emailResult && emailResult.error) {
+                console.error("Error enviando email invite:", emailResult.error)
+            }
+        }
     }
 
     if (!inviteData?.user) return { error: 'No se pudo obtener la información del usuario.' }
