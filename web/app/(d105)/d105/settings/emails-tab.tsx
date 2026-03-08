@@ -12,8 +12,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { defaultTemplates } from '@/lib/email-templates'
 import dynamic from 'next/dynamic'
 
-// Cargar Jodit de forma asíncrona para Next.js App Router (evitar window is not defined)
-const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false })
+// Quill editor needs next/dynamic to avoid window object errors on SSR
+const ReactQuill = dynamic(async () => {
+    const { default: RQ } = await import("react-quill-new")
+    // eslint-disable-next-line react/display-name
+    return ({ forwardedRef, ...props }: any) => <RQ ref={forwardedRef} {...props} />
+}, { ssr: false })
+import 'react-quill-new/dist/quill.snow.css'
 
 interface EmailsTabProps {
     settings: any
@@ -28,7 +33,7 @@ const EMAIL_TYPES = [
 ]
 
 export function EmailsTab({ settings }: EmailsTabProps) {
-    const editorRef = useRef(null)
+    const editorRef = useRef<any>(null)
     const [selectedType, setSelectedType] = useState('invite')
 
     // Obtener contenido inicial (El guardado o el maquetado perfecto por defecto)
@@ -94,29 +99,30 @@ export function EmailsTab({ settings }: EmailsTabProps) {
     }
 
     const insertVariable = (variable: string) => {
-        // Obtenemos la instancia rica de Jodit
         if (editorRef.current) {
-            const editor: any = editorRef.current;
-            // Verificar si el editor está listo e inyectar el código HTML crudo sin escaparlo
-            if (editor?.selection) {
-                editor.selection.insertHTML(variable);
-            } else {
-                setHtmlContent(htmlContent + variable);
-            }
+            const editor = editorRef.current.getEditor();
+            // Evitar pérdida de foco y forzar la inserción en el editor virtual
+            editor.focus();
+            const range = editor.getSelection(true) || { index: 0 };
+            editor.insertText(range.index, variable);
+            editor.setSelection(range.index + variable.length);
+        } else {
+            setHtmlContent(htmlContent + variable);
         }
     }
 
-    // Configuración robusta del editor Jodit WYSIWYG
-    const editorConfig = useMemo(() => ({
-        readonly: false,
-        height: 500,
-        placeholder: "Escribe aquí la maquetación de tu correo...",
-        buttons: ['bold', 'italic', 'underline', 'strikethrough', '|', 'align', 'ul', 'ol', '|', 'font', 'fontsize', 'brush', 'paragraph', '|', 'link', 'image', 'table', '|', 'hr', 'eraser', 'source', 'fullsize'],
-        showCharsCounter: false,
-        showWordsCounter: false,
-        showXPathInStatusbar: false,
-        spellcheck: false,
-    }), []);
+    // Configuración barra WYSIWYG de Quill
+    const modules = useMemo(() => ({
+        toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'align': [] }],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['link', 'image'],
+            ['clean']
+        ]
+    }), [])
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-500">
@@ -226,12 +232,35 @@ export function EmailsTab({ settings }: EmailsTabProps) {
                             <span className="text-[10px] text-slate-400 self-center font-bold tracking-widest uppercase">Inyección Rápida de Supabase</span>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 flex-1 relative min-h-[500px] border-none">
-                        <JoditEditor
-                            ref={editorRef}
+                    <CardContent className="p-0 flex-1 relative min-h-[400px] border-none">
+                        <style>
+                            {`
+                                .ql-container {
+                                    font-size: 15px !important;
+                                    min-height: 400px !important;
+                                    border-bottom-left-radius: 0.5rem;
+                                    border-bottom-right-radius: 0.5rem;
+                                    border: none !important;
+                                }
+                                .ql-toolbar {
+                                    border: none !important;
+                                    border-bottom: 1px solid #e2e8f0 !important;
+                                    background: #f8fafc;
+                                    padding: 12px 16px !important;
+                                }
+                                .ql-editor {
+                                    min-height: 400px;
+                                }
+                            `}
+                        </style>
+                        <ReactQuill
+                            forwardedRef={editorRef}
+                            theme="snow"
                             value={htmlContent}
-                            config={editorConfig}
-                            onBlur={newContent => setHtmlContent(newContent)} // Guardar contenido al perder foco para evitar renders pesados
+                            onChange={setHtmlContent}
+                            modules={modules}
+                            className="w-full bg-white h-full pb-10"
+                            placeholder="Empieza a escribir tu correo corporativo aquí..."
                         />
                     </CardContent>
                     <CardFooter className="bg-slate-50 border-t border-slate-100 py-3 px-6 flex justify-between text-[11px] text-slate-500 font-medium z-10">
