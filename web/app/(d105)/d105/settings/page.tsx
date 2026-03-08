@@ -5,7 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BackupTab } from './backup-tab'
 import { SecurityTab } from './security-tab'
 import { PersonalSecurity } from './personal-security'
-import { Settings, UserCircle, Database, ShieldCheck, Terminal, Fingerprint, Cpu, HardDrive } from 'lucide-react'
+import { EmailsTab } from './emails-tab'
+import { Settings, UserCircle, Database, ShieldCheck, Terminal, Fingerprint, Cpu, HardDrive, Mail } from 'lucide-react'
 import { getSettings, getSecuritySettings } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -83,6 +84,13 @@ export default async function SettingsPage() {
                                 <ShieldCheck size={16} />
                                 SEGURIDAD
                             </TabsTrigger>
+                            <TabsTrigger
+                                value="emails"
+                                className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent data-[state=active]:text-white text-blue-100/60 text-[11px] font-black uppercase tracking-[0.2em] px-0 py-4 transition-all hover:text-white flex items-center gap-3"
+                            >
+                                <Mail size={16} />
+                                PLANTILLAS EMAIL
+                            </TabsTrigger>
                         </TabsList>
 
                         <div className="max-w-7xl mx-auto px-0 md:px-0 relative z-20 pb-20">
@@ -109,6 +117,12 @@ export default async function SettingsPage() {
                                 <TabsContent value="security" className="mt-0 focus-visible:ring-0 outline-none">
                                     <div className="max-w-4xl">
                                         <SecurityTab currentTtl={currentTtl} />
+                                    </div>
+                                </TabsContent>
+
+                                <TabsContent value="emails" className="mt-0 focus-visible:ring-0 outline-none">
+                                    <div className="max-w-5xl">
+                                        <EmailsTab settings={settings} />
                                     </div>
                                 </TabsContent>
                             </div>

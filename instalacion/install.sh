@@ -109,6 +109,20 @@ cat /var/www/control-horario/supabase/migrations/*.sql > volumes/db/init/99-migr
 # No copiamos seed.sql porque lo haremos vía API con TypeScript para que resuelva dependencias Auth
 chmod -R 777 volumes/
 
+echo "Generando override para Plantillas de Correo..."
+cat << EOF > docker-compose.override.yml
+services:
+  auth:
+    environment:
+      GOTRUE_MAILER_EXTERNAL_HOSTS: \${GOTRUE_MAILER_EXTERNAL_HOSTS}
+      GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED: \${GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED}
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: ${PROTOCOL}://${DOMAIN}/api/mail-templates?type=confirmation
+      GOTRUE_MAILER_TEMPLATES_RECOVERY: ${PROTOCOL}://${DOMAIN}/api/mail-templates?type=recovery
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: ${PROTOCOL}://${DOMAIN}/api/mail-templates?type=magic_link
+      GOTRUE_MAILER_TEMPLATES_EMAIL_CHANGE: ${PROTOCOL}://${DOMAIN}/api/mail-templates?type=email_change
+      GOTRUE_MAILER_TEMPLATES_INVITE: ${PROTOCOL}://${DOMAIN}/api/mail-templates?type=invite
+EOF
+
 echo "Levantando servicios de Supabase en background..."
 docker compose up -d
 
