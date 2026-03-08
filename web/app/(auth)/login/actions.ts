@@ -48,13 +48,14 @@ export async function signIn(formData: FormData) {
             return { error: statusMsgs[profile.status] || 'Tu cuenta está desactivada temporalmente.' }
         }
 
+        // Restricción de acceso para Super Administradores en login normal
         if (profile?.role === 'super_admin') {
-            revalidatePath('/d105')
-            redirect('/d105')
-        } else {
-            revalidatePath('/fichaje')
-            redirect('/fichaje')
+            await supabase.auth.signOut()
+            return { error: 'Los administradores de sistema deben acceder por su portal propio. (/d105)' }
         }
+
+        revalidatePath('/fichaje')
+        redirect('/fichaje')
     }
 
     return { error: 'Error desconocido al iniciar sesión.' }
@@ -91,12 +92,11 @@ export async function verify2FALogin(userId: string, token: string) {
             .eq('id', userId)
 
         if (profile.role === 'super_admin') {
-            revalidatePath('/d105')
-            redirect('/d105')
-        } else {
-            revalidatePath('/fichaje')
-            redirect('/fichaje')
+            return { error: 'Los administradores de sistema deben acceder por su portal propio. (/d105)' }
         }
+
+        revalidatePath('/fichaje')
+        redirect('/fichaje')
     }
 
     return { error: 'Código 2FA incorrecto.' }

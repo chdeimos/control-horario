@@ -85,7 +85,16 @@ export async function updateSession(request: NextRequest) {
 
     // A. SuperAdmin Portal (d105)
     if (path.startsWith('/d105')) {
-        if (!user) return redirect('/login')
+        if (path === '/d105/login') {
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+                if (profile?.role === 'super_admin') return redirect('/d105')
+                return redirect('/fichaje')
+            }
+            return response
+        }
+
+        if (!user) return redirect('/d105/login')
 
         const { data: profile } = await supabase
             .from('profiles')
@@ -93,8 +102,8 @@ export async function updateSession(request: NextRequest) {
             .eq('id', user.id)
             .single()
 
-        if (profile?.role !== 'super_admin') return redirect('/fichaje')
-        if (await needs2FAChallenge(user.id)) return redirect('/login?requires2fa=true')
+        if (profile?.role !== 'super_admin') return redirect('/d105/login')
+        if (await needs2FAChallenge(user.id)) return redirect('/d105/login?requires2fa=true')
     }
 
     // B. Management Portal (gestion)
