@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { updateBulkSettings } from './actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Code, Save, Mail, Loader2, Send, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Code, Save, Mail, Loader2, Send, AlertCircle, CheckCircle2, Type, Link as LinkIcon, Hash, AtSign } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface EmailsTabProps {
@@ -24,6 +24,7 @@ const EMAIL_TYPES = [
 ]
 
 export function EmailsTab({ settings }: EmailsTabProps) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null)
     const [selectedType, setSelectedType] = useState('invite')
     const [htmlContent, setHtmlContent] = useState(settings[`email_template_${selectedType}`] || '')
     const [testEmail, setTestEmail] = useState('')
@@ -81,6 +82,24 @@ export function EmailsTab({ settings }: EmailsTabProps) {
         } finally {
             setIsTesting(false)
         }
+    }
+
+    const insertVariable = (variable: string) => {
+        const textarea = textareaRef.current
+        if (!textarea) return
+
+        const start = textarea.selectionStart
+        const end = textarea.selectionEnd
+        const text = htmlContent
+
+        const newText = text.substring(0, start) + variable + text.substring(end)
+        setHtmlContent(newText)
+
+        // Timeout para que actualice la vista antes de enfocar
+        setTimeout(() => {
+            textarea.focus()
+            textarea.setSelectionRange(start + variable.length, start + variable.length)
+        }, 10)
     }
 
     return (
@@ -167,12 +186,37 @@ export function EmailsTab({ settings }: EmailsTabProps) {
                                     Cuerpo del Mensaje HTML
                                 </CardTitle>
                                 <CardDescription className="text-xs mt-1">
-                                    Sintaxis soportada: Go Template (Ej. {'{{ .ConfirmationURL }}'}, {'{{ .Token }}'}).
+                                    Sintaxis soportada: Go Template.
                                 </CardDescription>
                             </div>
                             <Button size="sm" onClick={handleSave} disabled={isSaving} className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase tracking-wider">
                                 {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                                 Guardar {EMAIL_TYPES.find(t => t.id === selectedType)?.name}
+                            </Button>
+                        </div>
+
+                        {/* TOOLBAR HTML / VARIABLES */}
+                        <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-slate-200">
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-white text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => insertVariable('{{ .ConfirmationURL }}')} title="El enlace de la acción principal del correo.">
+                                <LinkIcon size={12} /> URL Acción
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-white text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => insertVariable('{{ .Token }}')} title="El código numérico de 6 dígitos asociado.">
+                                <Hash size={12} /> Código OTP
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-white text-slate-600 border-slate-200" onClick={() => insertVariable('{{ .Email }}')} title="Correo del destinatario. (No disponible en Invitación inicial).">
+                                <AtSign size={12} /> Email Usuario
+                            </Button>
+
+                            <span className="w-px h-5 bg-slate-300 mx-2 self-center"></span>
+
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 text-slate-700 bg-white" onClick={() => insertVariable('<br/>')} title="Salto de línea">
+                                <Type size={12} /> Salto &lt;br/&gt;
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 text-slate-700 bg-white" onClick={() => insertVariable('<strong></strong>')} title="Poner el texto en negrita">
+                                <strong>B</strong> Negrita
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 text-slate-700 bg-white" onClick={() => insertVariable('<p></p>')} title="Envolver el texto en un párrafo">
+                                &lt;p&gt;
                             </Button>
                         </div>
                     </CardHeader>
@@ -181,6 +225,7 @@ export function EmailsTab({ settings }: EmailsTabProps) {
                             {Array.from({ length: 20 }).map((_, i) => <div key={i} className="mb-4">{i + 1}</div>)}
                         </div>
                         <Textarea
+                            ref={textareaRef}
                             value={htmlContent}
                             onChange={(e) => setHtmlContent(e.target.value)}
                             className="w-full h-full min-h-[500px] border-0 rounded-none focus-visible:ring-0 resize-y p-6 pl-12 font-mono text-sm leading-relaxed text-slate-700 bg-white"
