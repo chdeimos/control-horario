@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS profiles (
     pin_code TEXT,
     avatar_url TEXT,
     is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 3. Devices (Hardware)
