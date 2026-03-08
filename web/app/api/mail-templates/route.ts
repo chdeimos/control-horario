@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const { data: globalSettings } = await supabase
         .from('system_settings')
         .select('key, value')
-        .in('key', ['app_name', 'saas_logo_web', `email_template_${type}`])
+        .in('key', ['app_name', 'saas_logo_web', 'saas_legal_text', `email_template_${type}`])
 
     const settingsMap = (globalSettings || []).reduce((acc: any, item: any) => {
         acc[item.key] = item.value
@@ -21,21 +21,16 @@ export async function GET(request: NextRequest) {
 
     const appName = settingsMap.app_name || 'Control Horario'
     const logoUrl = settingsMap.saas_logo_web || ''
+    const legalText = settingsMap.saas_legal_text || '' // Opcional
     const customTemplate = settingsMap[`email_template_${type}`]
 
-    if (customTemplate) {
-        // Enviar lo que el cliente redactó personalizado 
-        // (Pero en la UI le habremos obligado a que se preprocese con el Footer legal)
-        const response = new NextResponse(customTemplate)
-        response.headers.set('Content-Type', 'text/html; charset=utf-8')
-        return response
-    }
-
-    // Default Fallback Template si no hay ninguna configuración
+    // Default Fallback Template
     const mappedType = type as keyof typeof defaultTemplates
     const targetBase = defaultTemplates[mappedType] || defaultTemplates.invite
 
-    const finalHtml = EMAIL_BASE_HTML(targetBase.title, targetBase.content, appName, logoUrl)
+    // Si hay un customTemplate (del WYSIWYG) lo usamos, de lo contrario usamos el de fallback
+    const mailContent = customTemplate || targetBase.content
+    const finalHtml = EMAIL_BASE_HTML(targetBase.title, mailContent, appName, logoUrl, legalText)
 
     const response = new NextResponse(finalHtml)
     response.headers.set('Content-Type', 'text/html; charset=utf-8')

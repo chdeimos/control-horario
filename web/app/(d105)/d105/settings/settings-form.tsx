@@ -4,10 +4,11 @@ import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { updateBulkSettings } from './actions'
 import { toast } from 'sonner'
 import { ImageUpload } from '@/components/shared/image-upload'
-import { Building2, Palette, Globe, Mail, Loader2, Save, Sparkles, Layout, Smartphone } from 'lucide-react'
+import { Building2, Palette, Globe, Mail, Loader2, Save, Sparkles, Layout, Smartphone, Scale } from 'lucide-react'
 
 export function SettingsForm({ settings }: { settings: any }) {
     const [loading, setLoading] = useState(false)
@@ -23,6 +24,7 @@ export function SettingsForm({ settings }: { settings: any }) {
         saas_logo_app: settings.saas_logo_app || '',
         saas_logo_web: settings.saas_logo_web || '',
         saas_favicon: settings.saas_favicon || '',
+        saas_legal_text: settings.saas_legal_text || '',
     })
 
     async function handleSave() {
@@ -192,6 +194,28 @@ export function SettingsForm({ settings }: { settings: any }) {
                             <Sparkles size={12} className="text-rose-400" />
                             <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest leading-none">* Destino automático para reportes financieros del sistema.</p>
                         </div>
+                    </div>
+                </div>
+
+                <div className="p-10 border-t border-slate-50 bg-white space-y-8">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-600">
+                            <Scale size={20} />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-black text-slate-900 uppercase">Cláusula Legal en Correos</h3>
+                            <p className="text-[10px] text-slate-400">Texto LOPD anclado al pie de página de los mensajes</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <Textarea
+                            id="saas_legal_text"
+                            value={form.saas_legal_text}
+                            onChange={(e) => setForm({ ...form, saas_legal_text: e.target.value })}
+                            placeholder={"Ej: Le informamos que sus datos serán tratados por EMPRESA SL..."}
+                            className="bg-slate-50 border-slate-100 rounded-lg min-h-[120px] focus:ring-4 focus:ring-blue-100/50 focus:border-[#3b60c1] transition-all text-xs text-slate-600 leading-relaxed font-mono"
+                        />
                     </div>
                 </div>
 

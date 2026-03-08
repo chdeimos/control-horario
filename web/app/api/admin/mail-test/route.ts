@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         const { data: globalSettings } = await supabase
             .from('system_settings')
             .select('key, value')
-            .in('key', ['app_name', 'saas_logo_web', `email_template_${type}`])
+            .in('key', ['app_name', 'saas_logo_web', 'saas_legal_text', `email_template_${type}`])
 
         const settingsMap = (globalSettings || []).reduce((acc: any, item: any) => {
             acc[item.key] = item.value
@@ -58,17 +58,15 @@ export async function POST(request: NextRequest) {
 
         const appName = settingsMap.app_name || 'Control Horario'
         const logoUrl = settingsMap.saas_logo_web || ''
+        const legalText = settingsMap.saas_legal_text || '' // Opcional
         const customTemplate = settingsMap[`email_template_${type}`]
 
-        let finalHtml = ''
+        const mappedType = type as keyof typeof defaultTemplates
+        const targetBase = defaultTemplates[mappedType] || defaultTemplates.invite
 
-        if (customTemplate) {
-            finalHtml = customTemplate
-        } else {
-            const mappedType = type as keyof typeof defaultTemplates
-            const targetBase = defaultTemplates[mappedType] || defaultTemplates.invite
-            finalHtml = EMAIL_BASE_HTML(targetBase.title, targetBase.content, appName, logoUrl)
-        }
+        // El customTemplate ahora solo contiene el texto WYSIWYG, le inyectamos la cabecera e info de base de nuestro builder
+        const mailContent = customTemplate || targetBase.content
+        let finalHtml = EMAIL_BASE_HTML(targetBase.title, mailContent, appName, logoUrl, legalText)
 
         // Reemplazar sintaxis GoTemplate para que sea bonita en la previsualizacion
         finalHtml = finalHtml.replace(/\{\{ \.ConfirmationURL \}\}/g, 'https://tu-dominio.com/verify?token=xxxxxxxx')

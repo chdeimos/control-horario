@@ -1,7 +1,7 @@
 import { Mail } from "lucide-react"
 
 // Plantilla Base común con el Footer Legal
-export const EMAIL_BASE_HTML = (title: string, content: string, appName: string, logoUrl: string) => `
+export const EMAIL_BASE_HTML = (title: string, content: string, appName: string, logoUrl: string, legalText?: string) => `
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -35,14 +35,15 @@ export const EMAIL_BASE_HTML = (title: string, content: string, appName: string,
         <tr>
             <td style="background-color: #f1f5f9; padding: 30px; font-size: 10px; line-height: 1.4; color: #64748b; border-top: 1px solid #e2e8f0;">
                 <p style="margin-top: 0; font-weight: bold; text-transform: uppercase;">Aviso de Privacidad y Confidencialidad</p>
-                <p style="text-align: justify; margin-bottom: 15px;">
-                    Le informamos que su dirección de correo electrónico, así como el resto de los datos de carácter personal que nos ha facilitado, serán objeto de tratamiento en nuestros registros de actividades con la finalidad de gestionar el contenido de esta comunicación, así como el de toda la documentación anexa, la agenda de contactos y las relaciones mercantiles con nuestros clientes y proveedores. Usted tiene derecho a obtener confirmación sobre si en PANDORA SOFT SL estamos tratando sus datos personales y por tanto tiene derecho a ejercer sus derechos de acceso, rectificación, limitación del tratamiento, portabilidad, oposición al tratamiento y supresión de sus datos mediante escrito dirigido a la dirección postal LEBRIJA (SEVILLA), C.P. 41740, CALLE MURILLO Nº 12 o electrónica comercial@pandorasoft.com, adjuntando copia del DNI en ambos casos, así como el derecho a presentar una reclamación ante la Autoridad de Control (aepd.es). La información incluida en este correo electrónico es confidencial y va dirigida únicamente al destinatario del mismo. En el supuesto de que usted no fuera el destinatario, le solicitamos que nos lo indique y no comunique su contenido a terceros, procediendo a su destrucción. Le informamos que está totalmente prohibida cualquier utilización, divulgación, distribución y/o reproducción de esta comunicación sin autorización expresa en virtud de la Legislación vigente. Gracias.
-                </p>
-                
-                <p style="font-weight: bold; text-transform: uppercase;">Confidentiality Notice</p>
-                <p style="text-align: justify; margin-bottom: 0;">
-                    We inform you that your email address and the personal data that you have given us, will be at disposal of our company to manage the content of this communication, as well as that of the accompanying documentation, the contact agenda and the relations with our customers and suppliers. You have the right to obtain confirmation of whether or not we are treating your personal data under PANDORASOFT SL and therefore you have the right to exercise your rights of access, rectification, treatment limitation, portability, opposition to treatment and suppression of your data by writing to the address postal LEBRIJA (SEVILLA), C.P. 41740, CALLE MURILLO Nº 12 or electronic account comercial@pandorasoft.com attached mail copy of the ID in both cases, as well as the right to file a claim with the Control Authority (aepd.es). The information included in this email is confidential and is addressed only to the recipient thereof. In the evento that you were not the addressee, we ask you to inform us, not disclosure its contents to third parties, and proceed to their destruction. We inform you that any use, disclosure, distribution and/or reproduction of this communication without authorization is totally prohibited by the Law. Thank you.
-                </p>
+                <div style="text-align: justify; margin-bottom: 0;">
+                    ${legalText ?
+        `<p style="white-space: pre-wrap;">${legalText}</p>` :
+        `<p style="margin-bottom: 15px;">Le informamos que su dirección de correo electrónico, así como el resto de los datos de carácter personal que nos ha facilitado, serán objeto de tratamiento en nuestros registros de actividades con la finalidad de gestionar el contenido de esta comunicación... Usted tiene derecho a obtener confirmación sobre si en PANDORA SOFT SL estamos tratando sus datos personales...</p>
+                         <p style="font-weight: bold; text-transform: uppercase;">Confidentiality Notice</p>
+                         <p>We inform you that your email address and the personal data that you have given us, will be at disposal of our company to manage the content of this communication...</p>
+                        `
+    }
+                </div>
             </td>
         </tr>
     </table>
