@@ -18,6 +18,7 @@
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.34.0",
+    "jodit-react": "^5.3.21",
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "jszip": "^3.10.1",

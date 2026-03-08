@@ -1,32 +1,42 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { updateBulkSettings } from './actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { Code, Save, Mail, Loader2, Send, AlertCircle, CheckCircle2, Type, Link as LinkIcon, Hash, AtSign } from 'lucide-react'
+import { Save, Mail, Loader2, Send, AlertCircle, CheckCircle2, Link as LinkIcon, Hash, AtSign } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { defaultTemplates } from '@/lib/email-templates'
+import dynamic from 'next/dynamic'
+
+// Cargar Jodit de forma asíncrona para Next.js App Router (evitar window is not defined)
+const JoditEditor = dynamic(() => import('jodit-react'), { ssr: false })
 
 interface EmailsTabProps {
     settings: any
 }
 
 const EMAIL_TYPES = [
-    { id: 'invite', name: 'Invitación a Usuarios', defaultHtml: '<p>Hola,</p><p>Has sido invitado a unirte a la plataforma...</p>' },
-    { id: 'confirmation', name: 'Confirmación de Correo', defaultHtml: '<p>Hola,</p><p>Haz clic en el enlace para confirmar tu correo...</p>' },
-    { id: 'recovery', name: 'Recuperación de Contraseña', defaultHtml: '<p>Hola,</p><p>Usa este link para restablecer tu contraseña...</p>' },
-    { id: 'magic_link', name: 'Enlace Mágico (Acceso sin Clave)', defaultHtml: '<p>Hola,</p><p>Haz clic para entrar automáticamente...</p>' },
-    { id: 'email_change', name: 'Cambio de Correo', defaultHtml: '<p>Hola,</p><p>Confirma el cambio a tu nueva dirección de correo...</p>' }
+    { id: 'invite', name: 'Invitación a Usuarios', defaultHtml: defaultTemplates.invite.content.trim() },
+    { id: 'confirmation', name: 'Confirmación de Correo', defaultHtml: defaultTemplates.confirmation.content.trim() },
+    { id: 'recovery', name: 'Recuperación de Contraseña', defaultHtml: defaultTemplates.recovery.content.trim() },
+    { id: 'magic_link', name: 'Enlace Mágico (Acceso sin Clave)', defaultHtml: defaultTemplates.magic_link.content.trim() },
+    { id: 'email_change', name: 'Cambio de Correo', defaultHtml: defaultTemplates.email_change.content.trim() }
 ]
 
 export function EmailsTab({ settings }: EmailsTabProps) {
-    const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const editorRef = useRef(null)
     const [selectedType, setSelectedType] = useState('invite')
-    const [htmlContent, setHtmlContent] = useState(settings[`email_template_${selectedType}`] || '')
+
+    // Obtener contenido inicial (El guardado o el maquetado perfecto por defecto)
+    const getInitialContent = (type: string) => {
+        return settings[`email_template_${type}`] || EMAIL_TYPES.find(t => t.id === type)?.defaultHtml || ''
+    }
+
+    const [htmlContent, setHtmlContent] = useState(getInitialContent(selectedType))
     const [testEmail, setTestEmail] = useState('')
 
     const [isSaving, setIsSaving] = useState(false)
@@ -35,7 +45,7 @@ export function EmailsTab({ settings }: EmailsTabProps) {
 
     const handleTypeChange = (val: string) => {
         setSelectedType(val)
-        setHtmlContent(settings[`email_template_${val}`] || '')
+        setHtmlContent(getInitialContent(val))
         setMessage(null)
     }
 
@@ -49,7 +59,6 @@ export function EmailsTab({ settings }: EmailsTabProps) {
                 setMessage({ type: 'error', text: res.error })
             } else {
                 setMessage({ type: 'success', text: 'Plantilla de correo guardada con éxito.' })
-                // Update local settings map implicitly if needed, but it should remount on standard save.
             }
         } catch (error: any) {
             setMessage({ type: 'error', text: 'Ocurrió un error inesperado al guardar la plantilla.' })
@@ -85,22 +94,29 @@ export function EmailsTab({ settings }: EmailsTabProps) {
     }
 
     const insertVariable = (variable: string) => {
-        const textarea = textareaRef.current
-        if (!textarea) return
-
-        const start = textarea.selectionStart
-        const end = textarea.selectionEnd
-        const text = htmlContent
-
-        const newText = text.substring(0, start) + variable + text.substring(end)
-        setHtmlContent(newText)
-
-        // Timeout para que actualice la vista antes de enfocar
-        setTimeout(() => {
-            textarea.focus()
-            textarea.setSelectionRange(start + variable.length, start + variable.length)
-        }, 10)
+        // Obtenemos la instancia rica de Jodit
+        if (editorRef.current) {
+            const editor: any = editorRef.current;
+            // Verificar si el editor está listo e inyectar el código HTML crudo sin escaparlo
+            if (editor?.selection) {
+                editor.selection.insertHTML(variable);
+            } else {
+                setHtmlContent(htmlContent + variable);
+            }
+        }
     }
+
+    // Configuración robusta del editor Jodit WYSIWYG
+    const editorConfig = useMemo(() => ({
+        readonly: false,
+        height: 500,
+        placeholder: "Escribe aquí la maquetación de tu correo...",
+        buttons: ['bold', 'italic', 'underline', 'strikethrough', '|', 'align', 'ul', 'ol', '|', 'font', 'fontsize', 'brush', 'paragraph', '|', 'link', 'image', 'table', '|', 'hr', 'eraser', 'source', 'fullsize'],
+        showCharsCounter: false,
+        showWordsCounter: false,
+        showXPathInStatusbar: false,
+        spellcheck: false,
+    }), []);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-500">
@@ -182,60 +198,45 @@ export function EmailsTab({ settings }: EmailsTabProps) {
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle className="text-sm font-black text-slate-800 flex items-center gap-2">
-                                    <Code size={16} />
-                                    Cuerpo del Mensaje HTML
+                                    Editor Interactivo (WYSIWYG)
                                 </CardTitle>
                                 <CardDescription className="text-xs mt-1">
-                                    Sintaxis soportada: Go Template.
+                                    Formatea tu texto libremente. Las variables clave de GoTrue se insertarán dinámicamente.
                                 </CardDescription>
                             </div>
-                            <Button size="sm" onClick={handleSave} disabled={isSaving} className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase tracking-wider">
+                            <Button size="sm" onClick={handleSave} disabled={isSaving} className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] uppercase tracking-wider shadow-md">
                                 {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                                 Guardar {EMAIL_TYPES.find(t => t.id === selectedType)?.name}
                             </Button>
                         </div>
 
-                        {/* TOOLBAR HTML / VARIABLES */}
+                        {/* TOOLBAR HTML / VARIABLES CUSTOM */}
                         <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-slate-200">
-                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-white text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => insertVariable('{{ .ConfirmationURL }}')} title="El enlace de la acción principal del correo.">
-                                <LinkIcon size={12} /> URL Acción
+                            <Button variant="default" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-gradient-to-tr from-blue-700 to-blue-500 text-white shadow-sm border-0" onClick={() => insertVariable('{{ .ConfirmationURL }}')} title="El enlace de la acción principal del correo.">
+                                <LinkIcon size={12} /> URL Acción Oculta
                             </Button>
-                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-white text-blue-600 border-blue-200 hover:bg-blue-50" onClick={() => insertVariable('{{ .Token }}')} title="El código numérico de 6 dígitos asociado.">
-                                <Hash size={12} /> Código OTP
+                            <Button variant="default" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-gradient-to-tr from-blue-700 to-blue-500 text-white shadow-sm border-0" onClick={() => insertVariable('{{ .Token }}')} title="El código numérico de 6 dígitos asociado.">
+                                <Hash size={12} /> PIN Secreto (OTP)
                             </Button>
-                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-white text-slate-600 border-slate-200" onClick={() => insertVariable('{{ .Email }}')} title="Correo del destinatario. (No disponible en Invitación inicial).">
-                                <AtSign size={12} /> Email Usuario
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-white text-slate-700 border-slate-200 shadow-sm" onClick={() => insertVariable('{{ .Email }}')} title="Correo del destinatario.">
+                                <AtSign size={12} /> Email de Destino
                             </Button>
 
                             <span className="w-px h-5 bg-slate-300 mx-2 self-center"></span>
-
-                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 text-slate-700 bg-white" onClick={() => insertVariable('<br/>')} title="Salto de línea">
-                                <Type size={12} /> Salto &lt;br/&gt;
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 text-slate-700 bg-white" onClick={() => insertVariable('<strong></strong>')} title="Poner el texto en negrita">
-                                <strong>B</strong> Negrita
-                            </Button>
-                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 text-slate-700 bg-white" onClick={() => insertVariable('<p></p>')} title="Envolver el texto en un párrafo">
-                                &lt;p&gt;
-                            </Button>
+                            <span className="text-[10px] text-slate-400 self-center font-bold tracking-widest uppercase">Inyección Rápida de Supabase</span>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 flex-1 relative min-h-[400px]">
-                        <div className="absolute top-0 left-0 w-8 h-full bg-slate-100 border-r border-slate-200 z-10 flex flex-col pt-4 items-center text-[10px] font-mono text-slate-400 cursor-not-allowed">
-                            {Array.from({ length: 20 }).map((_, i) => <div key={i} className="mb-4">{i + 1}</div>)}
-                        </div>
-                        <Textarea
-                            ref={textareaRef}
+                    <CardContent className="p-0 flex-1 relative min-h-[500px] border-none">
+                        <JoditEditor
+                            ref={editorRef}
                             value={htmlContent}
-                            onChange={(e) => setHtmlContent(e.target.value)}
-                            className="w-full h-full min-h-[500px] border-0 rounded-none focus-visible:ring-0 resize-y p-6 pl-12 font-mono text-sm leading-relaxed text-slate-700 bg-white"
-                            placeholder={EMAIL_TYPES.find(t => t.id === selectedType)?.defaultHtml}
-                            spellCheck={false}
+                            config={editorConfig}
+                            onBlur={newContent => setHtmlContent(newContent)} // Guardar contenido al perder foco para evitar renders pesados
                         />
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t border-slate-100 py-3 px-6 flex justify-between text-[11px] text-slate-500 font-medium">
-                        <span>Formato soportado: HTML5 Inline CSS</span>
-                        <span>Caracteres: {htmlContent.length}</span>
+                    <CardFooter className="bg-slate-50 border-t border-slate-100 py-3 px-6 flex justify-between text-[11px] text-slate-500 font-medium z-10">
+                        <span>Formato: HTML Enriquecido (WYSIWYG)</span>
+                        <span>Pie Legal Adjunto Automáticamente al enviar</span>
                     </CardFooter>
                 </Card>
             </div>
