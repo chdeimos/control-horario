@@ -74,7 +74,7 @@ export function LoginForm({ initialUserId = null, force2FA = false }: LoginFormP
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="grid gap-4">
+                <form method="POST" onSubmit={handleSubmit} className="grid gap-4">
                     {error && (
                         <Alert variant="destructive">
                             <AlertCircle className="h-4 w-4" />
@@ -121,7 +121,7 @@ export function LoginForm({ initialUserId = null, force2FA = false }: LoginFormP
     }
 
     return (
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form method="POST" onSubmit={handleSubmit} className="grid gap-4">
             {error && (
                 <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />

@@ -110,7 +110,7 @@ export default function VerifyForm({ branding }: { branding: Branding }) {
             </div>
 
             <div className="bg-white rounded-lg p-8 md:p-12 shadow-2xl shadow-blue-900/5 border border-slate-100">
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form method="POST" onSubmit={handleSubmit} className="space-y-8">
                     <div className="text-center space-y-2 mb-4">
                         <h2 className="text-2xl font-black text-slate-900 tracking-tighter flex items-center justify-center gap-3 uppercase">
                             <ShieldCheck size={24} className="text-[#3b60c1]" />

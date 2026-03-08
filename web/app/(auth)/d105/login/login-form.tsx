@@ -76,7 +76,7 @@ export function D105LoginForm({ initialUserId = null, force2FA = false }: LoginF
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="grid gap-6">
+                <form method="POST" onSubmit={handleSubmit} className="grid gap-6">
                     {error && (
                         <Alert variant="destructive" className="rounded-lg border-red-500 bg-red-950/50 text-red-200">
                             <AlertCircle className="h-4 w-4 text-red-500" />
@@ -131,7 +131,7 @@ export function D105LoginForm({ initialUserId = null, force2FA = false }: LoginF
     }
 
     return (
-        <form onSubmit={handleSubmit} className="grid gap-6">
+        <form method="POST" onSubmit={handleSubmit} className="grid gap-6">
             {error && (
                 <Alert variant="destructive" className="rounded-lg border-red-500 bg-red-950/50 text-red-200 animate-in fade-in">
                     <AlertCircle className="h-4 w-4 text-red-500" />

@@ -128,7 +128,7 @@ export default function SetPasswordPage() {
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-8">
+                        <form method="POST" onSubmit={handleSubmit} className="space-y-8">
                             <div className="space-y-6">
                                 <div className="grid gap-3">
                                     <Label htmlFor="password" className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Nueva Contraseña</Label>
