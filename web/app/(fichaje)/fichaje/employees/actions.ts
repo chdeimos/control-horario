@@ -69,6 +69,16 @@ export async function inviteEmployee(formData: FormData) {
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email)
 
     if (inviteError) {
+        if (inviteError.message.includes('already been registered') || inviteError.message.includes('already exists')) {
+            const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
+            const existingUser = users.find(u => u.email === email)
+            if (existingUser) {
+                const { data: profileCheck } = await supabaseAdmin.from('profiles').select('role').eq('id', existingUser.id).single()
+                if (profileCheck?.role === 'super_admin') {
+                    return { error: 'Este correo pertenece al Administrador Global y no puede ser dado de alta como empleado.' }
+                }
+            }
+        }
         return { error: `Error invitando usuario: ${inviteError.message}` }
     }
 

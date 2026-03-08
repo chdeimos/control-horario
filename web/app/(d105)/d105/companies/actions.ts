@@ -164,17 +164,22 @@ export async function createCompanyAdmin(companyId: string, formData: FormData) 
     if (inviteError) {
         // If user already exists, we try to send a password reset as a "re-invite"
         if (inviteError.message.includes('already been registered')) {
+            // First, find who this is to prevent overriding a Super Admin
+            const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
+            const existingUser = users.find(u => u.email === email)
+            if (!existingUser) return { error: 'Error crítico: No se encuentra al usuario registrado.' }
+
+            const { data: profileCheck } = await supabaseAdmin.from('profiles').select('role').eq('id', existingUser.id).single()
+            if (profileCheck?.role === 'super_admin') {
+                return { error: 'Este correo electrónico pertenece al Administrador Global de la plataforma. No puede ser usado como administrador de una empresa.' }
+            }
+
             const supabase = await createClient()
             const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'}/set-password`
             })
 
             if (resetError) return { error: `El usuario ya existe pero no pudimos enviar el correo de recuperación: ${resetError.message}` }
-
-            // Still need to fetch the existing user id to update the profile
-            const { data: { users } } = await supabaseAdmin.auth.admin.listUsers()
-            const existingUser = users.find(u => u.email === email)
-            if (!existingUser) return { error: 'Error crítico: No se encuentra al usuario registrado.' }
 
             inviteData = { user: existingUser }
         } else {
