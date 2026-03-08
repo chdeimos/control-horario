@@ -78,9 +78,9 @@ async function setup() {
         }
     }
 
-    // 4. Crear o buscar Super Admin (admin@example.com)
+    // 4. Crear o buscar Super Admin (chdeimos@gmail.com)
     const { data: adminAuth, error: adminErr } = await supabase.auth.admin.createUser({
-        email: 'admin@example.com',
+        email: 'chdeimos@gmail.com',
         password: 'admin123',
         email_confirm: true
     })
@@ -90,18 +90,18 @@ async function setup() {
     }
 
     const { data: authUsers } = await supabase.auth.admin.listUsers()
-    const adminUser = authUsers.users.find(u => u.email === 'admin@example.com')
+    const adminUser = authUsers.users.find(u => u.email === 'chdeimos@gmail.com')
 
     if (adminUser) {
         await supabase.from('profiles').upsert({
             id: adminUser.id,
             company_id: company.id,
             role: 'super_admin',
-            full_name: 'Administrador Demo',
+            full_name: 'Deimos Administrador',
             department_id: dept?.id,
             status: 'active'
         })
-        console.log('✓ Usuario admin@example.com configurado como Super Admin.')
+        console.log('✓ Usuario chdeimos@gmail.com configurado como Super Admin.')
     }
 
     // 5. Crear empleados
