@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { getSiteUrl } from '@/lib/get-site-url'
 
 async function checkPlanLimit(companyId: string) {
     const supabase = await createClient()
@@ -99,12 +100,7 @@ export async function inviteEmployee(formData: FormData) {
 
     const supabaseAdmin = createAdminClient()
 
-    const { headers } = await import('next/headers')
-    let h: any
-    try { h = await headers() } catch { h = headers() }
-    const host = h.get('host') || '127.0.0.1:3000'
-    const protocol = h.get('x-forwarded-proto') || (host.includes('127.0.0.1') || host.includes('localhost') ? 'http' : 'https')
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`
+    const siteUrl = await getSiteUrl()
 
     // 1. Invite User
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({

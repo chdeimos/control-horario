@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
+import { getSiteUrl } from '@/lib/get-site-url'
 import { sendCustomAuthEmail } from '@/lib/send-custom-email'
 
 export async function getGlobalUsers() {
@@ -42,12 +43,7 @@ export async function getGlobalUsers() {
 export async function sendUserResetEmail(email: string) {
     const supabase = await createClient()
 
-    const { headers } = await import('next/headers')
-    let h: any
-    try { h = await headers() } catch { h = headers() }
-    const host = h.get('host') || '127.0.0.1:3000'
-    const protocol = h.get('x-forwarded-proto') || (host.includes('127.0.0.1') || host.includes('localhost') ? 'http' : 'https')
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`
+    const siteUrl = await getSiteUrl()
 
     const supabaseAdmin = createAdminClient()
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
