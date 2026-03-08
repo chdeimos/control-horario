@@ -25,21 +25,15 @@ export async function sendCustomAuthEmail(email: string, type: 'invite' | 'recov
     const mappedType = type as keyof typeof defaultTemplates
     const targetBase = defaultTemplates[mappedType] || defaultTemplates.invite
 
-    // Parche de seguridad: Supabase a veces inyecta localhost si su .env interno no está bien configurado
-    const siteUrl = await getSiteUrl()
+    // Parche infalible: Usamos el dominio base que el propio Supabase nos devuelve
     let cleanActionLink = actionLink
-
     try {
         const urlObj = new URL(actionLink)
-        if (urlObj.searchParams.has('redirect_to')) {
-            const currentRedirect = urlObj.searchParams.get('redirect_to') || ''
-            if (currentRedirect.includes('localhost') || currentRedirect.includes('127.0.0.1')) {
-                // Reemplazamos la ruta por defecto por nuestro siteUrl y el callback real
-                urlObj.searchParams.set('redirect_to', `${siteUrl}/auth/callback?next=/set-password`)
-                cleanActionLink = urlObj.toString()
-            }
-        }
-    } catch (e) { /* ignore parse error */ }
+        const realOrigin = urlObj.origin // ej: https://horario.pandorasoft.com.es
+        // Sobreescribir redirect_to incondicionalmente para asegurar que siempre usamos el origin validado
+        urlObj.searchParams.set('redirect_to', `${realOrigin}/auth/callback?next=/set-password`)
+        cleanActionLink = urlObj.toString()
+    } catch (e) { console.error('Error parcheando actionLink', e) }
 
     // Si hay un customTemplate (del WYSIWYG) lo usamos, de lo contrario usamos el de fallback
     let mailContent = customTemplate || targetBase.content

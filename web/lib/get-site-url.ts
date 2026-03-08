@@ -4,6 +4,10 @@ export async function getSiteUrl() {
         return process.env.NEXT_PUBLIC_SITE_URL
     }
 
+    if (process.env.NEXT_PUBLIC_APP_URL) {
+        return process.env.NEXT_PUBLIC_APP_URL
+    }
+
     // 2. Derive from Supabase URL if it's a production URL
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
     if (supabaseUrl && !supabaseUrl.includes('127.0.0.1') && !supabaseUrl.includes('localhost')) {
