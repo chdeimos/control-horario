@@ -69,6 +69,19 @@ if [ -z "$REPO_URL" ]; then
     exit 1
 fi
 
+echo ""
+read -p "🔑 Introduce el EMAIL para el Super Administrador del Sistema: " SA_EMAIL
+if [ -z "$SA_EMAIL" ]; then
+    SA_EMAIL="admin@example.com"
+fi
+
+read -s -p "🔑 Introduce la CONTRASEÑA para el Super Administrador: " SA_PASS
+echo ""
+if [ -z "$SA_PASS" ]; then
+    SA_PASS="admin123"
+fi
+echo ""
+
 echo "Clonando en /var/www/control-horario..."
 mkdir -p /var/www
 cd /var/www
@@ -118,6 +131,8 @@ NEXT_PUBLIC_SUPABASE_URL=${PROTOCOL}://${DOMAIN}
 NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=$SERVICE_KEY
 NEXT_PUBLIC_APP_URL=${PROTOCOL}://${DOMAIN}
+SUPERADMIN_EMAIL=$SA_EMAIL
+SUPERADMIN_PASSWORD=$SA_PASS
 EOF
 
 npm install

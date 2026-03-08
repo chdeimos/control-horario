@@ -78,10 +78,13 @@ async function setup() {
         }
     }
 
-    // 4. Crear o buscar Super Admin (chdeimos@gmail.com)
+    // 4. Crear o buscar Super Admin (Variable dinámica de entorno)
+    const saEmail = process.env.SUPERADMIN_EMAIL || 'chdeimos@gmail.com'
+    const saPassword = process.env.SUPERADMIN_PASSWORD || 'admin123'
+
     const { data: adminAuth, error: adminErr } = await supabase.auth.admin.createUser({
-        email: 'chdeimos@gmail.com',
-        password: 'admin123',
+        email: saEmail,
+        password: saPassword,
         email_confirm: true
     })
 
@@ -90,7 +93,7 @@ async function setup() {
     }
 
     const { data: authUsers } = await supabase.auth.admin.listUsers()
-    const adminUser = authUsers.users.find(u => u.email === 'chdeimos@gmail.com')
+    const adminUser = authUsers.users.find(u => u.email === saEmail)
 
     if (adminUser) {
         await supabase.from('profiles').upsert({
@@ -101,7 +104,7 @@ async function setup() {
             department_id: dept?.id,
             status: 'active'
         })
-        console.log('✓ Usuario chdeimos@gmail.com configurado como Super Admin.')
+        console.log(`✓ Usuario ${saEmail} configurado como Super Admin.`)
     }
 
     // 5. Crear empleados
