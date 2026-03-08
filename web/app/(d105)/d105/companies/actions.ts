@@ -155,10 +155,17 @@ export async function createCompanyAdmin(companyId: string, formData: FormData) 
 
     const supabaseAdmin = createAdminClient()
 
+    const { headers } = await import('next/headers')
+    let h: any
+    try { h = await headers() } catch { h = headers() }
+    const host = h.get('host') || '127.0.0.1:3000'
+    const protocol = h.get('x-forwarded-proto') || (host.includes('127.0.0.1') || host.includes('localhost') ? 'http' : 'https')
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`
+
     // 1. Invite User
     let inviteData = null
     const { data, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'}/set-password`
+        redirectTo: `${siteUrl}/auth/callback?next=/set-password`
     })
 
     if (inviteError) {
@@ -176,7 +183,7 @@ export async function createCompanyAdmin(companyId: string, formData: FormData) 
 
             const supabase = await createClient()
             const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'}/set-password`
+                redirectTo: `${siteUrl}/auth/callback?next=/set-password`
             })
 
             if (resetError) return { error: `El usuario ya existe pero no pudimos enviar el correo de recuperación: ${resetError.message}` }

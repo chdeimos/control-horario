@@ -41,8 +41,15 @@ export async function getGlobalUsers() {
 export async function sendUserResetEmail(email: string) {
     const supabase = await createClient()
 
+    const { headers } = await import('next/headers')
+    let h: any
+    try { h = await headers() } catch { h = headers() }
+    const host = h.get('host') || '127.0.0.1:3000'
+    const protocol = h.get('x-forwarded-proto') || (host.includes('127.0.0.1') || host.includes('localhost') ? 'http' : 'https')
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${protocol}://${host}`
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://127.0.0.1:3000'}/set-password`
+        redirectTo: `${siteUrl}/auth/callback?next=/set-password`
     })
 
     if (error) return { error: error.message }
