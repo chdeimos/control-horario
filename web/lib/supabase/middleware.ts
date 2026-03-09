@@ -87,6 +87,9 @@ export async function updateSession(request: NextRequest) {
     if (path.startsWith('/d105')) {
         if (path === '/d105/login') {
             if (user) {
+                // Check if user still needs 2FA before redirecting to dashboard
+                if (await needs2FAChallenge(user.id)) return response
+
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
                 if (profile?.role === 'super_admin') return redirect('/d105')
                 // Si ya está logueado pero no es superadmin, no debería estar aquí
@@ -172,17 +175,18 @@ export async function updateSession(request: NextRequest) {
     // E. Login Redirection (Avoid double login)
     if (path === '/login') {
         if (user) {
-            if (!(await needs2FAChallenge(user.id))) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', user.id)
-                    .single()
+            // Re-check 2FA challenge status
+            if (await needs2FAChallenge(user.id)) return response
 
-                if (profile?.role === 'super_admin') return redirect('/d105')
-                if (['company_admin', 'manager'].includes(profile?.role || '')) return redirect('/gestion')
-                return redirect('/fichaje')
-            }
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single()
+
+            if (profile?.role === 'super_admin') return redirect('/d105')
+            if (['company_admin', 'manager'].includes(profile?.role || '')) return redirect('/gestion')
+            return redirect('/fichaje')
         }
     }
 

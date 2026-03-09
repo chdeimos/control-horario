@@ -15,9 +15,15 @@ export default async function D105LoginPage() {
     let force2FA = false
 
     if (user) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (profile?.role === 'super_admin') {
-            redirect('/d105')
+        const needsChallenge = await shouldRequest2FA(user.id)
+        if (needsChallenge) {
+            initialUserId = user.id
+            force2FA = true
+        } else {
+            const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+            if (profile?.role === 'super_admin') {
+                redirect('/d105')
+            }
         }
     }
 
