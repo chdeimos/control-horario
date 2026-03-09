@@ -89,6 +89,7 @@ export async function updateSession(request: NextRequest) {
             if (user) {
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
                 if (profile?.role === 'super_admin') return redirect('/d105')
+                // Si ya está logueado pero no es superadmin, no debería estar aquí
                 return redirect('/fichaje')
             }
             return response
