@@ -27,7 +27,7 @@ export async function sendCustomAuthEmail(email: string, type: 'invite' | 'recov
 
     // Bypass Infalible: Next.js SSR Auth Route Handler
     // Dejamos de mandar a la gente al endppoint "/auth/v1/verify" de GoTrue que falla en Docker
-    // Extraemos sus tokens y re-dirigimos a nuestro propio Next.js server-side /auth/callback
+    // Extraemos sus tokens y re-dirigimos a nuestro propio Next.js server-side /api/auth/callback
     const siteUrl = await getSiteUrl()
     let cleanActionLink = actionLink
     try {
@@ -37,7 +37,7 @@ export async function sendCustomAuthEmail(email: string, type: 'invite' | 'recov
 
         if (token) {
             // Creamos nuestra propia URL blindada y la resolvemos en el Server FrontEnd
-            cleanActionLink = `${siteUrl}/auth/callback?token_hash=${token}&type=${typeStr}&next=/set-password`
+            cleanActionLink = `${siteUrl}/api/auth/callback?token_hash=${token}&type=${typeStr}&next=/set-password`
         }
     } catch (e) { console.error('Error parcheando actionLink', e) }
 

@@ -50,7 +50,7 @@ export async function sendUserResetEmail(email: string) {
         type: 'recovery',
         email: email,
         options: {
-            redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+            redirectTo: `${siteUrl}/api/auth/callback?next=/set-password`
         }
     })
 

@@ -73,7 +73,7 @@ export async function inviteEmployee(formData: FormData) {
         type: 'invite',
         email: email,
         options: {
-            redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+            redirectTo: `${siteUrl}/api/auth/callback?next=/set-password`
         }
     })
 

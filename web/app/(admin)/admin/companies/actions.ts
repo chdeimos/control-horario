@@ -142,7 +142,7 @@ export async function createCompanyAdmin(companyId: string, formData: FormData) 
         type: 'invite',
         email: email,
         options: {
-            redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+            redirectTo: `${siteUrl}/api/auth/callback?next=/set-password`
         }
     })
 
@@ -153,7 +153,7 @@ export async function createCompanyAdmin(companyId: string, formData: FormData) 
                 type: 'recovery',
                 email: email,
                 options: {
-                    redirectTo: `${siteUrl}/auth/callback?next=/set-password`
+                    redirectTo: `${siteUrl}/api/auth/callback?next=/set-password`
                 }
             })
 

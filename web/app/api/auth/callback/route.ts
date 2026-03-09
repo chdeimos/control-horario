@@ -16,7 +16,7 @@ export async function GET(request: Request) {
         if (!error) {
             return NextResponse.redirect(`${origin}${next}`)
         }
-        return NextResponse.redirect(`${origin}/auth/auth-code-error?error=otp_failed&message=${error.message}`)
+        return NextResponse.redirect(`${origin}/login?error=invalid_token&message=${error.message}`)
     }
 
     if (code) {
@@ -28,5 +28,5 @@ export async function GET(request: Request) {
     }
 
     // return the user to an error page with instructions
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+    return NextResponse.redirect(`${origin}/login?error=auth_failed`)
 }
