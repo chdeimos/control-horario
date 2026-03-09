@@ -21,7 +21,8 @@ import {
     Building2,
     Mail,
     UserCircle,
-    Loader2
+    Loader2,
+    Trash2
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -42,7 +43,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from 'sonner'
-import { sendUserResetEmail, toggleUserStatus } from './actions'
+import { sendUserResetEmail, toggleUserStatus, deleteUserAccount } from './actions'
 
 interface UserProfile {
     id: string
@@ -65,6 +66,7 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
     // Confirmation Dialog State
     const [confirmOpen, setConfirmOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
+    const [actionType, setActionType] = useState<'toggle' | 'delete'>('toggle')
 
     const handleSort = (key: keyof UserProfile | 'company_name') => {
         let direction: 'asc' | 'desc' = 'asc'
@@ -104,24 +106,38 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
         })
     }
 
-    const onToggleClick = (user: UserProfile) => {
+    const onActionClick = (user: UserProfile, type: 'toggle' | 'delete') => {
         setSelectedUser(user)
+        setActionType(type)
         setConfirmOpen(true)
     }
 
-    const confirmToggleStatus = async () => {
+    const confirmAction = async () => {
         if (!selectedUser) return
-
         setIsPending(true)
-        const result = await toggleUserStatus(selectedUser.id, selectedUser.is_active)
-        setIsPending(false)
-        setConfirmOpen(false)
 
-        if (result.success) {
-            setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, is_active: !selectedUser.is_active } : u))
-            toast.success(`Usuario ${selectedUser.full_name} ${!selectedUser.is_active ? 'activado' : 'desactivado'}`)
+        if (actionType === 'delete') {
+            const result = await deleteUserAccount(selectedUser.id)
+            setIsPending(false)
+            setConfirmOpen(false)
+
+            if (result.success) {
+                setUsers(prev => prev.filter(u => u.id !== selectedUser.id))
+                toast.success(`Usuario ${selectedUser.full_name} eliminado permanentemente.`)
+            } else {
+                toast.error(`Error al eliminar: ${result.error}`)
+            }
         } else {
-            toast.error(`Error: ${result.error}`)
+            const result = await toggleUserStatus(selectedUser.id, selectedUser.is_active)
+            setIsPending(false)
+            setConfirmOpen(false)
+
+            if (result.success) {
+                setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, is_active: !selectedUser.is_active } : u))
+                toast.success(`Usuario ${selectedUser.full_name} ${!selectedUser.is_active ? 'activado' : 'desactivado'}`)
+            } else {
+                toast.error(`Error: ${result.error}`)
+            }
         }
     }
 
@@ -209,7 +225,7 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <button
-                                            onClick={() => onToggleClick(u)}
+                                            onClick={() => onActionClick(u, 'toggle')}
                                             className={`px-3 py-1 rounded-full text-xs font-semibold transition-all hover:scale-105 ${u.is_active
                                                 ? "bg-green-100 text-green-700 border border-green-200"
                                                 : "bg-red-100 text-red-700 border border-red-200"
@@ -219,15 +235,26 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
                                         </button>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-8 text-xs gap-1.5 text-slate-600 hover:text-indigo-600 hover:border-indigo-200"
-                                            onClick={() => handleSendResetEmail(u.email)}
-                                        >
-                                            <Key size={14} />
-                                            Reset
-                                        </Button>
+                                        <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 text-xs gap-1.5 text-slate-600 hover:text-indigo-600 hover:border-indigo-200"
+                                                onClick={() => handleSendResetEmail(u.email)}
+                                            >
+                                                <Key size={14} />
+                                                Reset
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200"
+                                                onClick={() => onActionClick(u, 'delete')}
+                                                title="Eliminar usuario"
+                                            >
+                                                <Trash2 size={14} />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -240,10 +267,17 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>¿Confirmar cambio de estado?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                            {actionType === 'delete' ? '¿Confirmar eliminación permanente?' : '¿Confirmar cambio de estado?'}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                            Estás a punto de <strong>{selectedUser?.is_active ? 'desactivar' : 'activar'}</strong> el acceso para <strong>{selectedUser?.full_name}</strong>.
-                            {selectedUser?.is_active ? ' El usuario no podrá entrar al sistema hasta que lo reactives.' : ' El usuario podrá volver a entrar inmediatamente.'}
+                            {actionType === 'delete' ? (
+                                <>Estás a punto de <strong className="text-red-500">ELIMINAR</strong> a <strong>{selectedUser?.full_name}</strong> de forma irrecuperable de la base de datos.</>
+                            ) : (
+                                <>Estás a punto de <strong>{selectedUser?.is_active ? 'desactivar' : 'activar'}</strong> el acceso para <strong>{selectedUser?.full_name}</strong>.
+                                    {selectedUser?.is_active ? ' El usuario no podrá entrar al sistema hasta que lo reactives.' : ' El usuario podrá volver a entrar inmediatamente.'}
+                                </>
+                            )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -251,9 +285,9 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
                         <AlertDialogAction
                             onClick={(e) => {
                                 e.preventDefault()
-                                confirmToggleStatus()
+                                confirmAction()
                             }}
-                            className={selectedUser?.is_active ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+                            className={actionType === 'delete' ? "bg-red-600 hover:bg-red-700 text-white" : selectedUser?.is_active ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
                             disabled={isPending}
                         >
                             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

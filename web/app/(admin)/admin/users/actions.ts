@@ -79,3 +79,18 @@ export async function toggleUserStatus(userId: string, currentStatus: boolean) {
     revalidatePath('/admin/users')
     return { success: true }
 }
+
+export async function deleteUserAccount(userId: string) {
+    const supabaseAdmin = createAdminClient()
+
+    // Primero borrar perfil si existe (puede que la base de datos lo haga en cascada, pero aseguramos)
+    await supabaseAdmin.from('profiles').delete().eq('id', userId)
+
+    // Borrar de auth.users usando el admin client
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
+
+    if (error) return { error: error.message }
+
+    revalidatePath('/admin/users')
+    return { success: true }
+}

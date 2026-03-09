@@ -26,7 +26,8 @@ import {
     UserMinus,
     ArrowUpDown,
     Shield,
-    Phone
+    Phone,
+    Trash2
 } from 'lucide-react'
 import {
     DropdownMenu,
@@ -54,7 +55,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from 'sonner'
-import { sendUserResetEmail, toggleUserStatus } from './actions'
+import { sendUserResetEmail, toggleUserStatus, deleteUserAccount } from './actions'
 
 interface UserProfile {
     id: string
@@ -92,6 +93,7 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
     // Confirmation Dialog State
     const [confirmOpen, setConfirmOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null)
+    const [actionType, setActionType] = useState<'toggle' | 'delete'>('toggle')
 
     const handleSort = (key: keyof UserProfile | 'company_name') => {
         let direction: 'asc' | 'desc' = 'asc'
@@ -150,24 +152,38 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
         })
     }
 
-    const onToggleClick = (user: UserProfile) => {
+    const onActionClick = (user: UserProfile, type: 'toggle' | 'delete') => {
         setSelectedUser(user)
+        setActionType(type)
         setConfirmOpen(true)
     }
 
-    const confirmToggleStatus = async () => {
+    const confirmAction = async () => {
         if (!selectedUser) return
-
         setIsPending(true)
-        const result = await toggleUserStatus(selectedUser.id, selectedUser.is_active)
-        setIsPending(false)
-        setConfirmOpen(false)
 
-        if (result.success) {
-            setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, is_active: !selectedUser.is_active } : u))
-            toast.success(`Usuario ${selectedUser.full_name} ${!selectedUser.is_active ? 'activado' : 'desactivado'}`)
+        if (actionType === 'delete') {
+            const result = await deleteUserAccount(selectedUser.id)
+            setIsPending(false)
+            setConfirmOpen(false)
+
+            if (result.success) {
+                setUsers(prev => prev.filter(u => u.id !== selectedUser.id))
+                toast.success(`Usuario ${selectedUser.full_name} eliminado permanentemente.`)
+            } else {
+                toast.error(`Error: ${result.error}`)
+            }
         } else {
-            toast.error(`Error: ${result.error}`)
+            const result = await toggleUserStatus(selectedUser.id, selectedUser.is_active)
+            setIsPending(false)
+            setConfirmOpen(false)
+
+            if (result.success) {
+                setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, is_active: !selectedUser.is_active } : u))
+                toast.success(`Usuario ${selectedUser.full_name} ${!selectedUser.is_active ? 'activado' : 'desactivado'}`)
+            } else {
+                toast.error(`Error: ${result.error}`)
+            }
         }
     }
 
@@ -333,7 +349,7 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
                                     </TableCell>
                                     <TableCell className="py-8 text-center">
                                         <button
-                                            onClick={() => onToggleClick(u)}
+                                            onClick={() => onActionClick(u, 'toggle')}
                                             className={`px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all relative overflow-hidden group/btn ${u.is_active
                                                 ? "text-emerald-600 bg-emerald-50 border border-emerald-100 hover:bg-emerald-600 hover:text-white"
                                                 : "text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-600 hover:text-white"
@@ -356,6 +372,15 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
                                                 <Key size={14} />
                                                 Resetear Acceso
                                             </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-10 w-10 p-0 rounded-xl border border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-600 hover:text-white hover:border-rose-600 transition-all ml-1 isolate"
+                                                onClick={() => onActionClick(u, 'delete')}
+                                                title="Eliminar usuario"
+                                            >
+                                                <Trash2 size={14} />
+                                            </Button>
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -371,17 +396,27 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
                     <div className="p-10 space-y-8">
                         <AlertDialogHeader className="space-y-4">
                             <div className="flex items-center gap-3">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${selectedUser?.is_active ? 'bg-rose-50 text-rose-500' : 'bg-emerald-50 text-emerald-500'}`}>
-                                    {selectedUser?.is_active ? <UserMinus size={24} /> : <UserCheck size={24} />}
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${actionType === 'delete' ? 'bg-rose-50 text-rose-500' : selectedUser?.is_active ? 'bg-rose-50 text-rose-500' : 'bg-emerald-50 text-emerald-500'}`}>
+                                    {actionType === 'delete' ? <Trash2 size={24} /> : selectedUser?.is_active ? <UserMinus size={24} /> : <UserCheck size={24} />}
                                 </div>
                                 <AlertDialogTitle className="text-xl font-black text-slate-900 uppercase italic tracking-tighter">
-                                    Modificar Permisos
+                                    {actionType === 'delete' ? 'Confirmar Eliminación' : 'Modificar Permisos'}
                                 </AlertDialogTitle>
                             </div>
                             <AlertDialogDescription className="text-slate-500 text-sm font-bold uppercase tracking-wide leading-relaxed">
-                                Estas a punto de <span className="text-slate-900 font-extrabold">{selectedUser?.is_active ? 'SUSPENDER' : 'RESTAURAR'}</span> el acceso neural para <span className="text-[#3b60c1] font-black">{selectedUser?.full_name}</span>.
-                                <br /><br />
-                                Esta acción afectará la autenticación en todos los nodos de la red global.
+                                {actionType === 'delete' ? (
+                                    <>
+                                        Estas a punto de <span className="text-rose-600 font-extrabold">ELIMINAR PERMANENTEMENTE</span> a <span className="text-rose-600 font-black">{selectedUser?.full_name}</span>.
+                                        <br /><br />
+                                        Si prosigues, sus datos, su registro y toda su historia quedarán purgados del núcleo de la base de datos irreversiblemente.
+                                    </>
+                                ) : (
+                                    <>
+                                        Estas a punto de <span className="text-slate-900 font-extrabold">{selectedUser?.is_active ? 'SUSPENDER' : 'RESTAURAR'}</span> el acceso neural para <span className="text-[#3b60c1] font-black">{selectedUser?.full_name}</span>.
+                                        <br /><br />
+                                        Esta acción afectará la autenticación en todos los nodos de la red global.
+                                    </>
+                                )}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="gap-3">
@@ -391,9 +426,9 @@ export function UsersTable({ initialUsers }: { initialUsers: UserProfile[] }) {
                             <AlertDialogAction
                                 onClick={(e) => {
                                     e.preventDefault()
-                                    confirmToggleStatus()
+                                    confirmAction()
                                 }}
-                                className={`flex-1 rounded-2xl uppercase text-[10px] font-black tracking-widest h-14 transition-all shadow-xl ${selectedUser?.is_active ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-200" : "bg-[#3b60c1] hover:bg-[#2d4a94] text-white shadow-blue-200"}`}
+                                className={`flex-1 rounded-2xl uppercase text-[10px] font-black tracking-widest h-14 transition-all shadow-xl ${actionType === 'delete' ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-200" : selectedUser?.is_active ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-200" : "bg-[#3b60c1] hover:bg-[#2d4a94] text-white shadow-blue-200"}`}
                                 disabled={isPending}
                             >
                                 {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'CONFIRMAR CAMBIO'}
