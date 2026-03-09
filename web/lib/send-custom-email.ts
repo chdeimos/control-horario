@@ -25,13 +25,22 @@ export async function sendCustomAuthEmail(email: string, type: 'invite' | 'recov
     const mappedType = type as keyof typeof defaultTemplates
     const targetBase = defaultTemplates[mappedType] || defaultTemplates.invite
 
-    // Parche infalible: Usamos el dominio base que el propio Supabase nos devuelve
+    // Parche infalible: Reconstruímos la URL completa asegurando el dominio externo
+    const siteUrl = await getSiteUrl()
     let cleanActionLink = actionLink
     try {
         const urlObj = new URL(actionLink)
-        const realOrigin = urlObj.origin // ej: https://horario.pandorasoft.com.es
-        // Sobreescribir redirect_to incondicionalmente para asegurar que siempre usamos el origin validado
-        urlObj.searchParams.set('redirect_to', `${realOrigin}/auth/callback?next=/set-password`)
+        const parsedBase = new URL(siteUrl)
+
+        // 1. Forzar que el origen empiece SIEMPRE por nuestro siteUrl (https://horario.pandorasoft.com.es)
+        // ya que a veces Supabase devuelve http://127.0.0.1:54321 internamente en el .origin
+        urlObj.protocol = parsedBase.protocol
+        urlObj.host = parsedBase.host
+        urlObj.port = parsedBase.port
+
+        // 2. Forzar que el redirect_to sea nuestro callback exacto y no localhost
+        urlObj.searchParams.set('redirect_to', `${siteUrl}/auth/callback?next=/set-password`)
+
         cleanActionLink = urlObj.toString()
     } catch (e) { console.error('Error parcheando actionLink', e) }
 
