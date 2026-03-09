@@ -25,23 +25,20 @@ export async function sendCustomAuthEmail(email: string, type: 'invite' | 'recov
     const mappedType = type as keyof typeof defaultTemplates
     const targetBase = defaultTemplates[mappedType] || defaultTemplates.invite
 
-    // Parche infalible: Reconstruímos la URL completa asegurando el dominio externo
+    // Bypass Infalible: Next.js SSR Auth Route Handler
+    // Dejamos de mandar a la gente al endppoint "/auth/v1/verify" de GoTrue que falla en Docker
+    // Extraemos sus tokens y re-dirigimos a nuestro propio Next.js server-side /auth/callback
     const siteUrl = await getSiteUrl()
     let cleanActionLink = actionLink
     try {
         const urlObj = new URL(actionLink)
-        const parsedBase = new URL(siteUrl)
+        const token = urlObj.searchParams.get('token')
+        const typeStr = urlObj.searchParams.get('type') || 'recovery'
 
-        // 1. Forzar que el origen empiece SIEMPRE por nuestro siteUrl (https://horario.pandorasoft.com.es)
-        // ya que a veces Supabase devuelve http://127.0.0.1:54321 internamente en el .origin
-        urlObj.protocol = parsedBase.protocol
-        urlObj.host = parsedBase.host
-        urlObj.port = parsedBase.port
-
-        // 2. Forzar que el redirect_to sea nuestro callback exacto y no localhost
-        urlObj.searchParams.set('redirect_to', `${siteUrl}/auth/callback?next=/set-password`)
-
-        cleanActionLink = urlObj.toString()
+        if (token) {
+            // Creamos nuestra propia URL blindada y la resolvemos en el Server FrontEnd
+            cleanActionLink = `${siteUrl}/auth/callback?token_hash=${token}&type=${typeStr}&next=/set-password`
+        }
     } catch (e) { console.error('Error parcheando actionLink', e) }
 
     // Si hay un customTemplate (del WYSIWYG) lo usamos, de lo contrario usamos el de fallback
