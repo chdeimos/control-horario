@@ -8,6 +8,7 @@ CREATE OR REPLACE FUNCTION create_company_and_owner(
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   new_company_id UUID;

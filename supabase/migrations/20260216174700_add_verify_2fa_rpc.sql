@@ -83,7 +83,7 @@ BEGIN
 
     RETURN json_build_object('success', false, 'error', 'Invalid 2FA code');
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, extensions;
 
 -- Grant access to authenticated users
 GRANT EXECUTE ON FUNCTION public.verify_2fa_token(TEXT) TO authenticated;

@@ -131,7 +131,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SET search_path = public;
 
 DROP TRIGGER IF EXISTS trigger_check_overlap ON time_entries;
 CREATE TRIGGER trigger_check_overlap

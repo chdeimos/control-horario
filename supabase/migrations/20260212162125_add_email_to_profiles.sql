@@ -16,7 +16,7 @@ BEGIN
   WHERE id = NEW.id;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Trigger for email sync
 DROP TRIGGER IF EXISTS on_auth_user_email_update ON auth.users;

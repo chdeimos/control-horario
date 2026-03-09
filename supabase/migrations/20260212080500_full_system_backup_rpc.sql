@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION public.get_system_backup()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = public, auth, extensions
 AS $$
 DECLARE
     backup JSONB;
@@ -44,7 +44,7 @@ CREATE OR REPLACE FUNCTION public.restore_system_backup(backup_data JSONB)
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth
+SET search_path = public, auth, extensions
 AS $$
 DECLARE
     u JSONB;
