@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { type EmailOtpType } from '@supabase/supabase-js'
+import { getSiteUrl } from '@/lib/get-site-url'
 
 export async function GET(request: Request) {
-    const { searchParams, origin } = new URL(request.url)
+    const { searchParams } = new URL(request.url)
+    const siteUrl = await getSiteUrl()
     const code = searchParams.get('code')
     const token_hash = searchParams.get('token_hash')
     const type = searchParams.get('type') as EmailOtpType | null
@@ -14,19 +16,19 @@ export async function GET(request: Request) {
         const supabase = await createClient()
         const { error } = await supabase.auth.verifyOtp({ type, token_hash })
         if (!error) {
-            return NextResponse.redirect(`${origin}${next}`)
+            return NextResponse.redirect(`${siteUrl}${next}`)
         }
-        return NextResponse.redirect(`${origin}/login?error=invalid_token&message=${error.message}`)
+        return NextResponse.redirect(`${siteUrl}/login?error=invalid_token&message=${error.message}`)
     }
 
     if (code) {
         const supabase = await createClient()
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
-            return NextResponse.redirect(`${origin}${next}`)
+            return NextResponse.redirect(`${siteUrl}${next}`)
         }
     }
 
     // return the user to an error page with instructions
-    return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+    return NextResponse.redirect(`${siteUrl}/login?error=auth_failed`)
 }
