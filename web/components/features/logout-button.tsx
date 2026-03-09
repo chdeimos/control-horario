@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
-import { signOut } from "@/app/auth/actions"
+import { signOut } from "@/app/api/auth/actions"
 
 export function LogoutButton({
     variant = "ghost",
