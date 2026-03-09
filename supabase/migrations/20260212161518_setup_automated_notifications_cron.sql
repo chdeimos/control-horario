@@ -1,6 +1,7 @@
--- Enable the required extensions
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-CREATE EXTENSION IF NOT EXISTS http;
+-- Enable the required extensions in the extensions schema
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA extensions;
+CREATE EXTENSION IF NOT EXISTS http WITH SCHEMA extensions;
 
 -- Schedule the Missing Clock Notification Check
 -- Frequency: Every 15 minutes
