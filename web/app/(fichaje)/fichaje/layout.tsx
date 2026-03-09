@@ -32,7 +32,7 @@ export default function DashboardLayout({
             }
             setUser(user)
 
-            const today = new Date().toISOString().split('T')[0]
+            const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())
             const [profileRes, settingsRes, todayScheduleRes] = await Promise.all([
                 supabase
                     .from('profiles')
@@ -54,7 +54,7 @@ export default function DashboardLayout({
                     .from('work_schedules')
                     .select('*')
                     .eq('profile_id', user.id)
-                    .eq('day_of_week', new Date().getDay() || 7)
+                    .eq('day_of_week', new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Madrid' })).getDay() || 7)
                     .maybeSingle()
             ])
 

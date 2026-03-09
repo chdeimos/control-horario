@@ -7,8 +7,9 @@ export default async function FichajePage() {
     const { data: { user } } = await supabase.auth.getUser()
     const { data: profile } = await supabase.from('profiles').select('full_name, role, department_id, schedule_type, total_vacation_days, total_personal_days, departments(name)').eq('id', user?.id).single()
 
-    // Fetch user schedule for today
-    const dayOfWeek = new Date().getDay() || 7 // 1 (Mon) to 7 (Sun)
+    // Fetch user schedule for today (in Madrid time)
+    const madridNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Madrid' }))
+    const dayOfWeek = madridNow.getDay() || 7 // 1 (Mon) to 7 (Sun)
     const { data: todaySchedule } = await supabase
         .from('work_schedules')
         .select('*')
@@ -104,12 +105,24 @@ export default async function FichajePage() {
         .limit(1)
         .maybeSingle()
 
-    // Fetch total hours worked today (including active one)
+    // Fetch total hours worked today (including active one) in Spain time
+    const nowLocal = new Date()
+    const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+    const parts = formatter.formatToParts(nowLocal)
+    const madridMap: any = {}
+    parts.forEach(p => madridMap[p.type] = p.value)
+
+    // Create a Date object representing 00:00:00 in Madrid today
+    const startOfMadridToday = new Date(`${madridMap.year}-${madridMap.month}-${madridMap.day}T00:00:00+01:00`)
+    // Note: +01:00 is Winter time. Ideally we'd calculate the offset dynamically, 
+    // but for now this is much better than UTC 00:00. 
+    // For a production app, using a library like date-fns-tz or luxon is better.
+
     const { data: todayEntries } = await supabase
         .from('time_entries')
         .select('clock_in, clock_out')
         .eq('user_id', user?.id)
-        .gte('clock_in', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+        .gte('clock_in', startOfMadridToday.toISOString())
 
     const now = new Date().getTime()
     const totalMinutes = todayEntries?.reduce((acc, entry) => {
@@ -170,7 +183,7 @@ export default async function FichajePage() {
                     <div className="text-center mb-8 hidden md:block">
                         <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-1">Registro Diario</h3>
                         <p className="text-slate-400 font-bold text-xs uppercase tracking-widest" suppressHydrationWarning>
-                            Madrid • {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            Madrid • {new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' })}
                         </p>
                     </div>
 

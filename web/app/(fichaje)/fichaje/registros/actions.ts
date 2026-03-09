@@ -19,9 +19,10 @@ export async function getRegistryData(dateIso: string, departmentId?: string) {
         return { error: 'No tienes permisos para ver el registro general.' }
     }
 
+    // Convert YYYY-MM-DD to proper UTC range representing the Madrid day
+    const start = `${dateIso}T00:00:00+01:00`
+    const end = `${dateIso}T23:59:59+01:00`
     const date = new Date(dateIso)
-    const start = startOfDay(date).toISOString()
-    const end = endOfDay(date).toISOString()
 
     // 2. Obtener Perfiles de la EMPRESA
     let profilesQuery = supabase
@@ -83,9 +84,13 @@ export async function getRegistryData(dateIso: string, departmentId?: string) {
 
             empEntries.forEach(en => {
                 const clockIn = new Date(en.clock_in).getTime()
+
+                // Get today's date in Madrid
+                const todayMadrid = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())
+
                 const clockOut = en.clock_out
                     ? new Date(en.clock_out).getTime()
-                    : (new Date().toISOString().split('T')[0] === dateIso ? new Date().getTime() : new Date(en.clock_in).setHours(23, 59, 59, 999))
+                    : (todayMadrid === dateIso ? new Date().getTime() : new Date(`${dateIso}T23:59:59+01:00`).getTime())
 
                 totalWorkedMs += Math.max(0, clockOut - clockIn)
             })

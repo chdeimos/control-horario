@@ -24,7 +24,9 @@ export async function getLastEntry() {
 async function checkScheduleRestriction(userId: string, isClockIn: boolean) {
     const supabase = await createClient()
     const now = new Date()
-    const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay()
+    // Convert to Madrid time for calculation
+    const madridTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Madrid' }))
+    const dayOfWeek = madridTime.getDay() === 0 ? 7 : madridTime.getDay()
 
     const { data: profile } = await supabase
         .from('profiles')
@@ -49,7 +51,7 @@ async function checkScheduleRestriction(userId: string, isClockIn: boolean) {
         return { isIncident: false }
     }
 
-    const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()
+    const currentSeconds = madridTime.getHours() * 3600 + madridTime.getMinutes() * 60 + madridTime.getSeconds()
     const timeToSeconds = (timeStr: string) => {
         const [h, m, s] = timeStr.split(':').map(Number)
         return h * 3600 + (m || 0) * 60 + (s || 0)
@@ -130,7 +132,7 @@ export async function clockIn(lat: number, lng: number) {
                 'Aviso de Incidencia en Fichaje ⚠️',
                 `
                 <p>Hola ${prof?.full_name || 'Empleado'},</p>
-                <p>Se ha detectado una <strong>incidencia automática</strong> en tu fichaje de entrada hoy a las ${new Date().toLocaleTimeString()}.</p>
+                <p>Se ha detectado una <strong>incidencia automática</strong> en tu fichaje de entrada hoy a las ${new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' })}.</p>
                 <p><strong>Motivo:</strong> El registro se ha realizado fuera del margen permitido de tu horario asignado.</p>
                 <p>Por favor, revisa tu registro y justifica la incidencia si es necesario.</p>
                 `
@@ -193,7 +195,7 @@ export async function clockOut(lat: number, lng: number) {
                 'Aviso de Incidencia en Salida ⚠️',
                 `
                 <p>Hola ${prof?.full_name || 'Empleado'},</p>
-                <p>Se ha detectado una <strong>incidencia automática</strong> al cerrar tu jornada hoy a las ${new Date().toLocaleTimeString()}.</p>
+                <p>Se ha detectado una <strong>incidencia automática</strong> al cerrar tu jornada hoy a las ${new Date().toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' })}.</p>
                 <p><strong>Motivo:</strong> La salida se ha registrado fuera del margen de tu horario asignado.</p>
                 <p>Por favor, revisa tu registro y justifica la incidencia si es necesario.</p>
                 `
