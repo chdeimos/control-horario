@@ -1,4 +1,4 @@
-const CACHE_NAME = 'control-horario-v1';
+const CACHE_NAME = 'control-horario-v2';
 const ASSETS_TO_CACHE = [
     '/',
     '/manifest.json',
@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS_TO_CACHE);
@@ -13,11 +14,19 @@ self.addEventListener('install', (event) => {
     );
 });
 
+self.addEventListener('activate', (event) => {
+    event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('fetch', (event) => {
-    // Simple offline fallback or just pass-through
     event.respondWith(
-        fetch(event.request).catch(() => {
-            return caches.match(event.request);
+        fetch(event.request).catch(async (error) => {
+            const cachedResponse = await caches.match(event.request);
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+            // Retorna un error de red válido en vez de undefined, evitando que pete Next.js (RSC payloads)
+            return Response.error();
         })
     );
 });
