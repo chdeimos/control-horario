@@ -120,24 +120,31 @@ export default function LogsPage() {
                         <ScrollArea className="h-[600px]">
                             <div className="p-0">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="sticky top-0 bg-slate-50 border-b border-slate-100 z-10">
+                                    <thead className="sticky top-0 bg-slate-900 border-b border-slate-800 z-10">
                                         <tr>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest pl-6">Fecha / Hora</th>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Usuario / Email</th>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Resultado</th>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Origen</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest pl-6">Fecha / Hora</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">Usuario / Email</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">Resultado</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">Origen</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-slate-100 bg-white">
                                         {filterLogs(accessLogs, ['email', 'error_message', 'ip_address']).map((log) => (
-                                            <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <tr key={log.id} className="hover:bg-slate-50 transition-colors group">
                                                 <td className="p-4 pl-6">
-                                                    <span className="text-xs font-bold text-slate-900 block uppercase">
-                                                        {format(new Date(log.created_at), 'dd MMM yyyy', { locale: es })}
-                                                    </span>
-                                                    <span className="text-[10px] text-slate-400 font-mono">
-                                                        {format(new Date(log.created_at), 'HH:mm:ss')}
-                                                    </span>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`p-2 rounded-lg ${log.success ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'}`}>
+                                                            <Unlock size={14} />
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-xs font-black text-slate-900 block uppercase">
+                                                                {format(new Date(log.created_at), 'dd MMM yyyy', { locale: es })}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-400 font-mono">
+                                                                {format(new Date(log.created_at), 'HH:mm:ss')}
+                                                            </span>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-2">
@@ -146,19 +153,21 @@ export default function LogsPage() {
                                                 </td>
                                                 <td className="p-4">
                                                     {log.success ? (
-                                                        <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 shadow-none text-[8px] font-black uppercase tracking-tighter rounded-full">OK_SUCCESS</Badge>
+                                                        <Badge className="bg-emerald-500 text-white border-none shadow-lg shadow-emerald-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">LOGIN CORRECTO</Badge>
                                                     ) : (
                                                         <div className="space-y-1">
-                                                            <Badge variant="destructive" className="bg-rose-50 text-rose-600 border-rose-100 shadow-none text-[8px] font-black uppercase tracking-tighter rounded-full">AUTH_FAILURE</Badge>
-                                                            <p className="text-[9px] text-rose-400 font-bold max-w-[200px] truncate">{log.error_message}</p>
+                                                            <Badge className="bg-rose-500 text-white border-none shadow-lg shadow-rose-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">ERROR DE LOGIN</Badge>
+                                                            <p className="text-[9px] text-rose-400 font-bold max-w-[200px] truncate">
+                                                                {log.error_message === 'Invalid login credentials' ? 'Datos de login incorrectos.' : log.error_message}
+                                                            </p>
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="p-4">
-                                                    <div className="flex flex-col gap-1">
+                                                <td className="p-4 text-right pr-6">
+                                                    <div className="inline-flex flex-col items-end">
                                                         <div className="flex items-center gap-1.5">
                                                             <Globe size={10} className="text-slate-400" />
-                                                            <span className="text-[10px] font-mono font-bold text-slate-500">{log.ip_address}</span>
+                                                            <span className="text-[10px] font-mono font-bold text-slate-900">{log.ip_address}</span>
                                                         </div>
                                                         <div className="flex items-center gap-1.5">
                                                             <Monitor size={10} className="text-slate-400" />
@@ -220,9 +229,14 @@ export default function LogsPage() {
                                                 </td>
                                                 <td className="p-4">
                                                     {log.success ? (
-                                                        <Badge className="bg-emerald-500 text-white border-none shadow-lg shadow-emerald-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">ADM_GRANTED</Badge>
+                                                        <Badge className="bg-emerald-500 text-white border-none shadow-lg shadow-emerald-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">LOGIN CORRECTO</Badge>
                                                     ) : (
-                                                        <Badge className="bg-rose-500 text-white border-none shadow-lg shadow-rose-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">ADM_DENIED</Badge>
+                                                        <div className="space-y-1">
+                                                            <Badge className="bg-rose-500 text-white border-none shadow-lg shadow-rose-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">ERROR DE LOGIN</Badge>
+                                                            <p className="text-[9px] text-rose-400 font-bold max-w-[200px] truncate">
+                                                                {log.error_message === 'Invalid login credentials' ? 'Datos de login incorrectos.' : log.error_message}
+                                                            </p>
+                                                        </div>
                                                     )}
                                                 </td>
                                                 <td className="p-4 text-right pr-6">
@@ -246,43 +260,43 @@ export default function LogsPage() {
                         <ScrollArea className="h-[600px]">
                             <div className="p-0">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="sticky top-0 bg-slate-50 border-b border-slate-100 z-10">
+                                    <thead className="sticky top-0 bg-slate-900 border-b border-slate-800 z-10">
                                         <tr>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest pl-6">Script / Proceso</th>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Estado</th>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Resumen Ejecución</th>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Rendimiento</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest pl-6">Script / Proceso</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">Estado</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">Resumen Ejecución</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest text-right pr-6">Rendimiento</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-slate-100 bg-white">
                                         {filterLogs(cronLogs, ['cron_name', 'result_summary', 'error_detail']).map((log) => (
-                                            <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <tr key={log.id} className="hover:bg-slate-50 transition-colors group">
                                                 <td className="p-4 pl-6">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                                                        <div className={`p-2 rounded-lg ${log.status === 'success' ? 'bg-orange-50 text-orange-500' : 'bg-rose-50 text-rose-500'}`}>
                                                             <Server size={14} />
                                                         </div>
                                                         <div>
                                                             <span className="text-xs font-black text-slate-900 block uppercase tracking-tighter">{log.cron_name}</span>
-                                                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Executed: {format(new Date(log.created_at), 'HH:mm (dd/MM)')}</span>
+                                                            <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Ejecutado: {format(new Date(log.created_at), 'HH:mm (dd/MM)')}</span>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
                                                     {log.status === 'success' ? (
-                                                        <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 shadow-none text-[8px] font-black uppercase tracking-tighter">SUCCESS</Badge>
+                                                        <Badge className="bg-emerald-500 text-white border-none shadow-lg shadow-emerald-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">SUCCESS</Badge>
                                                     ) : (
-                                                        <Badge className="bg-rose-50 text-rose-600 border-rose-100 shadow-none text-[8px] font-black uppercase tracking-tighter">ERROR_DET</Badge>
+                                                        <Badge className="bg-rose-500 text-white border-none shadow-lg shadow-rose-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">CRON_ERROR</Badge>
                                                     )}
                                                 </td>
                                                 <td className="p-4">
                                                     <div className="max-w-[300px]">
-                                                        <p className="text-xs font-bold text-slate-600">{log.result_summary || '-'}</p>
+                                                        <p className="text-xs font-bold text-slate-600 truncate">{log.result_summary || '-'}</p>
                                                         {log.error_detail && <p className="text-[9px] text-rose-500 mt-1 font-mono">{log.error_detail}</p>}
                                                     </div>
                                                 </td>
-                                                <td className="p-4">
-                                                    <Badge variant="outline" className="text-[10px] font-mono border-slate-100 text-slate-400 font-bold tracking-tighter">
+                                                <td className="p-4 text-right pr-6">
+                                                    <Badge variant="outline" className="text-[10px] font-mono border-slate-100 text-slate-400 font-bold tracking-tighter bg-slate-50 px-2 py-1">
                                                         {log.duration_ms}ms
                                                     </Badge>
                                                 </td>
@@ -301,45 +315,44 @@ export default function LogsPage() {
                         <ScrollArea className="h-[600px]">
                             <div className="p-0">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="sticky top-0 bg-slate-50 border-b border-slate-100 z-10">
+                                    <thead className="sticky top-0 bg-slate-900 border-b border-slate-800 z-10">
                                         <tr>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest pl-6">Destinatario / Asunto</th>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Plantilla</th>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Envío</th>
-                                            <th className="p-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Timestamp</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest pl-6">Destinatario / Asunto</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">Plantilla</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest">Estado Envío</th>
+                                            <th className="p-4 text-[9px] font-black uppercase text-slate-500 tracking-widest text-right pr-6">Timestamp</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-slate-100 bg-white">
                                         {filterLogs(emailLogs, ['recipient', 'subject', 'error_message']).map((log) => (
-                                            <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <tr key={log.id} className="hover:bg-slate-50 transition-colors group">
                                                 <td className="p-4 pl-6">
-                                                    <div className="space-y-1">
-                                                        <span className="text-xs font-black text-slate-900 block truncate max-w-[200px]">{log.recipient}</span>
-                                                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight truncate max-w-[250px]">{log.subject}</span>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`p-2 rounded-lg ${log.status === 'sent' ? 'bg-blue-50 text-blue-500' : 'bg-rose-50 text-rose-500'}`}>
+                                                            <Mail size={14} />
+                                                        </div>
+                                                        <div className="space-y-0.5">
+                                                            <span className="text-xs font-black text-slate-900 block truncate max-w-[200px]">{log.recipient}</span>
+                                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tight truncate max-w-[250px]">{log.subject}</span>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
-                                                    <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-200 text-slate-400 py-0 h-5">
+                                                    <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-200 text-slate-400 py-0 h-5 bg-slate-50">
                                                         {log.template_name || 'GENERIC'}
                                                     </Badge>
                                                 </td>
                                                 <td className="p-4">
                                                     {log.status === 'sent' ? (
-                                                        <div className="flex items-center gap-1.5 text-emerald-500">
-                                                            <CheckCircle2 size={12} />
-                                                            <span className="text-[9px] font-black uppercase">Delivered</span>
-                                                        </div>
+                                                        <Badge className="bg-emerald-500 text-white border-none shadow-lg shadow-emerald-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">DELIVERED</Badge>
                                                     ) : (
                                                         <div className="space-y-1">
-                                                            <div className="flex items-center gap-1.5 text-rose-500">
-                                                                <AlertCircle size={12} />
-                                                                <span className="text-[9px] font-black uppercase">Failed</span>
-                                                            </div>
+                                                            <Badge className="bg-rose-500 text-white border-none shadow-lg shadow-rose-200 text-[8px] font-black uppercase tracking-widest px-3 py-1">FAILED</Badge>
                                                             <p className="text-[8px] text-rose-400 font-bold line-clamp-1">{log.error_message}</p>
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="p-4">
+                                                <td className="p-4 text-right pr-6">
                                                     <span className="text-[10px] text-slate-400 font-mono tracking-tight font-bold uppercase">
                                                         {format(new Date(log.created_at), 'dd/MM HH:mm:ss')}
                                                     </span>
