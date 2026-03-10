@@ -96,7 +96,23 @@ export async function getRegistryData(dateIso: string, departmentId?: string) {
             })
 
             const workedHours = totalWorkedMs / (1000 * 60 * 60)
-            const scheduledHours = Number(emp.scheduled_hours) || 8.0
+            const sched = allSchedules?.find(s => s.profile_id === emp.id)
+
+            // Calculate real hours from schedule if it's fixed
+            let scheduledHours = Number(emp.scheduled_hours) || 8.0
+            if (sched) {
+                if (emp.schedule_type === 'fixed' && sched.start_time && sched.end_time) {
+                    const timeToHours = (t: string) => {
+                        const [h, m] = t.split(':').map(Number)
+                        return h + (m || 0) / 60
+                    }
+                    let total = timeToHours(sched.end_time) - timeToHours(sched.start_time)
+                    if (sched.start_time_2 && sched.end_time_2) {
+                        total += timeToHours(sched.end_time_2) - timeToHours(sched.start_time_2)
+                    }
+                    scheduledHours = total > 0 ? total : scheduledHours
+                }
+            }
 
             return {
                 id: emp.id,
