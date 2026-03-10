@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { getMonthlyReportData } from './actions'
+import { getMonthlyReportData, getBrandingSettings } from './actions'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import JSZip from 'jszip'
@@ -20,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { useEffect } from 'react'
 
 export function ReportGenerator({
     employees,
@@ -35,11 +36,20 @@ export function ReportGenerator({
     // State for selection
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>(isAdmin ? [] : [currentUserId])
     const [monthYear, setMonthYear] = useState(new Date().toISOString().slice(0, 7)) // YYYY-MM
+    const [branding, setBranding] = useState<any>(null)
     const [loading, setLoading] = useState(false)
     const [progress, setProgress] = useState(0) // 0 to 100
     const [statusText, setStatusText] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
     const [deptFilter, setDeptFilter] = useState('all')
+
+    useEffect(() => {
+        async function loadBranding() {
+            const b = await getBrandingSettings()
+            setBranding(b)
+        }
+        loadBranding()
+    }, [])
 
     // Filter employees for search and department
     const filteredEmployees = employees.filter(emp => {
@@ -96,7 +106,7 @@ export function ReportGenerator({
                     folder?.file(`ERROR_${empName}.txt`, `Error: ${res.error}`)
                 } else {
                     // Generate PDF using shared generator
-                    const doc = generatePDF(res.company, res.employee, res.entries || [], month, year)
+                    const doc = generatePDF(res.company, res.employee, res.entries || [], month, year, branding)
                     const pdfBlob = doc.output('blob')
                     const filename = `Registro_${empName.replace(/[^a-z0-9]/gi, '_')}_${month}_${year}.pdf`
                     folder?.file(filename, pdfBlob)

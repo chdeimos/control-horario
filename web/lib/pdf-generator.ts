@@ -2,7 +2,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
 
-export function generatePDF(company: any, employee: any, entries: any[], month: number, year: number): jsPDF {
+export function generatePDF(company: any, employee: any, entries: any[], month: number, year: number, branding?: any): jsPDF {
     const doc = new jsPDF()
 
     // Header Compacto
@@ -149,6 +149,39 @@ export function generatePDF(company: any, employee: any, entries: any[], month: 
     doc.setFontSize(7)
     doc.setFont("helvetica", "normal")
     doc.text("(*) Los registros marcados con asterisco han sido objeto de corrección manual autorizada.", 14, finalY + 26)
+
+    // Branding & Watermark (SaaS)
+    if (branding) {
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+
+            // 1. Watermark (Translucent Logo)
+            if (branding.saas_logo_pdf) {
+                try {
+                    // Try adding watermark with transparency if supported
+                    // Note: setGState might need additional setup in some jsPDF versions, 
+                    // a simple approach is just adding it with low alpha if image supports it
+                    doc.addImage(branding.saas_logo_pdf, 'PNG', 55, 100, 100, 100, undefined, 'FAST');
+                } catch (e) {
+                    console.warn("Could not add branding logo to PDF:", e);
+                }
+            }
+
+            // 2. Footer SaaS Data
+            doc.setFontSize(6);
+            doc.setTextColor(180);
+            const footerParts = [
+                branding.saas_name,
+                branding.saas_cif ? `CIF: ${branding.saas_cif}` : null,
+                branding.saas_address,
+                branding.saas_website
+            ].filter(Boolean);
+
+            const footerText = footerParts.join(' | ');
+            doc.text(footerText, 105, 292, { align: "center" });
+        }
+    }
 
     return doc
 }

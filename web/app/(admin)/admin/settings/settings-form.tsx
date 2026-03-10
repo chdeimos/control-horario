@@ -20,9 +20,11 @@ export function SettingsForm({ settings }: { settings: any }) {
         saas_address: settings.saas_address || '',
         saas_email: settings.saas_email || '',
         saas_phone: settings.saas_phone || '',
+        saas_website: settings.saas_website || '',
         saas_logo_large: settings.saas_logo_large || '',
         saas_logo_app: settings.saas_logo_app || '',
         saas_logo_web: settings.saas_logo_web || '',
+        saas_logo_pdf: settings.saas_logo_pdf || '',
         saas_favicon: settings.saas_favicon || '',
     })
 
@@ -96,6 +98,15 @@ export function SettingsForm({ settings }: { settings: any }) {
                                 placeholder="+34 900 000 000"
                             />
                         </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="saas_website">Sitio Web</Label>
+                            <Input
+                                id="saas_website"
+                                value={form.saas_website}
+                                onChange={(e) => setForm({ ...form, saas_website: e.target.value })}
+                                placeholder="https://www.tuplataforma.com"
+                            />
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -143,6 +154,12 @@ export function SettingsForm({ settings }: { settings: any }) {
                             label="Favicon"
                             value={form.saas_favicon}
                             onChange={(url) => setForm({ ...form, saas_favicon: url })}
+                            path="saas/branding"
+                        />
+                        <ImageUpload
+                            label="Logo PDF/Marca Agua"
+                            value={form.saas_logo_pdf}
+                            onChange={(url) => setForm({ ...form, saas_logo_pdf: url })}
                             path="saas/branding"
                         />
                     </div>

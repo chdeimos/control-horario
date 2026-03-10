@@ -23,6 +23,29 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
 
     if (compError) throw compError
 
+    // Get Platform Settings
+    const { data: rawSettings } = await supabase
+        .from('system_settings')
+        .select('*')
+
+    const platformSettings = (rawSettings || []).reduce((acc: any, item: any) => {
+        acc[item.key] = item.value
+        return acc
+    }, {})
+
+    // Fetch Logo as base64 if exists (for server-side PDF generation)
+    if (platformSettings.saas_logo_pdf) {
+        try {
+            const response = await fetch(platformSettings.saas_logo_pdf)
+            const arrayBuffer = await response.arrayBuffer()
+            const base64 = Buffer.from(arrayBuffer).toString('base64')
+            const mimeType = platformSettings.saas_logo_pdf.split('.').pop() === 'png' ? 'image/png' : 'image/jpeg'
+            platformSettings.saas_logo_pdf = `data:${mimeType};base64,${base64}`
+        } catch (e) {
+            console.error("[AUTOMATION] Error fetching logo for PDF:", e)
+        }
+    }
+
     const stats = { companiesProcessed: 0, reportsGenerated: 0, emailsSent: 0, logs: [] as string[] }
 
     for (const company of companies) {
@@ -70,8 +93,8 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
 
                 if (!entries || entries.length === 0) continue
 
-                // Generate PDF
-                const doc = generatePDF(company, employee, entries, month, year)
+                // Generate PDF with Branding
+                const doc = generatePDF(company, employee, entries, month, year, platformSettings)
                 const pdfArrayBuffer = doc.output('arraybuffer')
 
                 const filename = `Registro_${employee.full_name.replace(/[^a-z0-9]/gi, '_')}_${month}_${year}.pdf`

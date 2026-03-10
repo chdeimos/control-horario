@@ -59,3 +59,16 @@ export async function getMonthlyReportData(userId: string, month: number, year: 
         entries: entries || []
     }
 }
+
+export async function getBrandingSettings() {
+    const supabase = await createClient()
+    const { data } = await supabase
+        .from('system_settings')
+        .select('key, value')
+        .in('key', ['saas_name', 'saas_cif', 'saas_address', 'saas_website', 'saas_logo_pdf'])
+
+    return (data || []).reduce((acc: any, item: any) => {
+        acc[item.key] = item.value
+        return acc
+    }, {})
+}
