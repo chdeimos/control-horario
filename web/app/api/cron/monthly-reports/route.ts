@@ -11,8 +11,12 @@ export async function GET(request: Request) {
     }
 
     try {
-        await processMonthlyReports()
-        return NextResponse.json({ success: true, message: 'Monthly reports processed and sent.' })
+        const result = await processMonthlyReports()
+        return NextResponse.json({
+            success: true,
+            message: 'Monthly reports processed.',
+            result
+        })
     } catch (error: any) {
         console.error('[CRON ERROR]', error)
         return NextResponse.json({ error: error.message }, { status: 500 })

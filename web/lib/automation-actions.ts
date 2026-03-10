@@ -23,9 +23,13 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
 
     if (compError) throw compError
 
+    const stats = { companiesProcessed: 0, reportsGenerated: 0, emailsSent: 0, logs: [] as string[] }
+
     for (const company of companies) {
         try {
-            console.log(`[AUTOMATION] Processing company: ${company.name}`)
+            stats.companiesProcessed++
+            console.log(`[AUTOMATION] Processing company: ${company.name} (${company.email})`)
+            stats.logs.push(`Compañía: ${company.name}`)
 
             // 2. Get all active employees for the company
             const { data: employees, error: empError } = await supabase
@@ -35,7 +39,10 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
                 .eq('status', 'active')
 
             if (empError) throw empError
-            if (!employees || employees.length === 0) continue
+            if (!employees || employees.length === 0) {
+                stats.logs.push(`- Sin empleados activos.`)
+                continue
+            }
 
             const zip = new JSZip()
             const folderName = `Informes_${year}_${month}`
@@ -57,7 +64,7 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
                     .order('clock_in', { ascending: true })
 
                 if (entriesError) {
-                    console.error(`[AUTOMATION] Error getting entries for ${employee.full_name}: ${entriesError.message}`)
+                    console.error(`[AUTOMATION] Error en ${employee.full_name}: ${entriesError.message}`)
                     continue
                 }
 
@@ -70,16 +77,18 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
                 const filename = `Registro_${employee.full_name.replace(/[^a-z0-9]/gi, '_')}_${month}_${year}.pdf`
                 folder?.file(filename, pdfArrayBuffer)
                 pdfCount++
+                stats.reportsGenerated++
             }
 
             if (pdfCount > 0) {
                 console.log(`[AUTOMATION] Sending ${pdfCount} reports to ${company.email}`)
+                stats.logs.push(`- Enviando ${pdfCount} informes a ${company.email}`)
 
                 // Finalize ZIP
                 const zipContent = await zip.generateAsync({ type: 'nodebuffer' })
 
                 // Send Email
-                await sendEmailNotification(
+                const emailResult = await sendEmailNotification(
                     company.email!,
                     `Informes de Jornada Mensuales - ${month}/${year}`,
                     `<p>Hola,</p>
@@ -90,15 +99,23 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
                         content: zipContent
                     }]
                 )
+
+                if (emailResult.success) {
+                    stats.emailsSent++
+                } else {
+                    stats.logs.push(`- ERROR enviando email: ${JSON.stringify(emailResult.error)}`)
+                }
             } else {
                 console.log(`[AUTOMATION] No entries found for any employee in ${company.name}`)
+                stats.logs.push(`- Sin registros para este mes.`)
             }
 
         } catch (err: any) {
             console.error(`[AUTOMATION] Critical error for company ${company.name}:`, err.message)
+            stats.logs.push(`- ERROR CRÍTICO: ${err.message}`)
         }
     }
 
-    console.log(`[AUTOMATION] Finished all companies.`)
-    return { success: true }
+    console.log(`[AUTOMATION] Finished. Stats:`, stats)
+    return { success: true, stats }
 }
