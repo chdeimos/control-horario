@@ -29,7 +29,17 @@ const EMAIL_TYPES = [
     { id: 'confirmation', name: 'Confirmación de Correo', defaultHtml: defaultTemplates.confirmation.content.trim() },
     { id: 'recovery', name: 'Recuperación de Contraseña', defaultHtml: defaultTemplates.recovery.content.trim() },
     { id: 'magic_link', name: 'Enlace Mágico (Acceso sin Clave)', defaultHtml: defaultTemplates.magic_link.content.trim() },
-    { id: 'email_change', name: 'Cambio de Correo', defaultHtml: defaultTemplates.email_change.content.trim() }
+    { id: 'email_change', name: 'Cambio de Correo', defaultHtml: defaultTemplates.email_change.content.trim() },
+    { id: 'monthly_report', name: 'Informes Mensuales (Empresa)', defaultHtml: defaultTemplates.monthly_report.content.trim() },
+    { id: 'forgotten_clock_closed', name: 'Fichaje Olvidado (Cierre Auto)', defaultHtml: defaultTemplates.forgotten_clock_closed.content.trim() },
+    { id: 'clock_in_reminder', name: 'Recordatorio Fichaje Entrada', defaultHtml: defaultTemplates.clock_in_reminder.content.trim() },
+    { id: 'clock_out_auto_closed', name: 'Cierre Auto Jornada', defaultHtml: defaultTemplates.clock_out_auto_closed.content.trim() },
+    { id: 'flexible_clock_out_auto_closed', name: 'Cierre Auto Jornada Flexible', defaultHtml: defaultTemplates.flexible_clock_out_auto_closed.content.trim() },
+    { id: 'daily_absence_incident', name: 'Incidencia Ausencia Diaria', defaultHtml: defaultTemplates.daily_absence_incident.content.trim() },
+    { id: 'time_off_approved', name: 'Ausencia: Aprobada', defaultHtml: defaultTemplates.time_off_approved.content.trim() },
+    { id: 'time_off_rejected', name: 'Ausencia: Rechazada', defaultHtml: defaultTemplates.time_off_rejected.content.trim() },
+    { id: 'time_off_modified', name: 'Ausencia: Modificada/Nueva', defaultHtml: defaultTemplates.time_off_modified.content.trim() },
+    { id: 'time_off_deleted', name: 'Ausencia: Anulada', defaultHtml: defaultTemplates.time_off_deleted.content.trim() }
 ]
 
 export function EmailsTab({ settings }: EmailsTabProps) {
@@ -218,18 +228,39 @@ export function EmailsTab({ settings }: EmailsTabProps) {
 
                         {/* TOOLBAR HTML / VARIABLES CUSTOM */}
                         <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-slate-200">
-                            <Button variant="default" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-gradient-to-tr from-blue-700 to-blue-500 text-white shadow-sm border-0" onClick={() => insertVariable('{{ .ConfirmationURL }}')} title="El enlace de la acción principal del correo.">
-                                <LinkIcon size={12} /> URL Acción Oculta
+                            {/* Auth & Site */}
+                            <Button variant="default" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-slate-800 text-white" onClick={() => insertVariable('{{ .FullName }}')} title="Nombre completo del destinatario">
+                                <AtSign size={12} /> Nombre Completo
                             </Button>
-                            <Button variant="default" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-gradient-to-tr from-blue-700 to-blue-500 text-white shadow-sm border-0" onClick={() => insertVariable('{{ .Token }}')} title="El código numérico de 6 dígitos asociado.">
-                                <Hash size={12} /> PIN Secreto (OTP)
+                            <Button variant="default" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-blue-600 text-white" onClick={() => insertVariable('{{ .ConfirmationURL }}')} title="URL de Confirmación/Acción">
+                                <LinkIcon size={12} /> URL Acción
                             </Button>
-                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 bg-white text-slate-700 border-slate-200 shadow-sm" onClick={() => insertVariable('{{ .Email }}')} title="Correo del destinatario.">
-                                <AtSign size={12} /> Email de Destino
+                            
+                            <span className="w-px h-5 bg-slate-300 mx-1 self-center"></span>
+
+                            {/* Clock & Dates */}
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 border-slate-300" onClick={() => insertVariable('{{ .Date }}')} title="Fecha del evento (YYYY-MM-DD)">
+                                <Hash size={12} /> Fecha
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 border-slate-300" onClick={() => insertVariable('{{ .StartDate }}')} title="Fecha de Inicio">
+                                <Hash size={12} /> F. Inicio
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 border-slate-300" onClick={() => insertVariable('{{ .EndDate }}')} title="Fecha de Fin">
+                                <Hash size={12} /> F. Fin
+                            </Button>
+                            
+                            <span className="w-px h-5 bg-slate-300 mx-1 self-center"></span>
+
+                            {/* Details */}
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 border-slate-300" onClick={() => insertVariable('{{ .Reason }}')} title="Motivo o Comentario">
+                                Motivo
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-7 text-[10px] font-bold gap-1 border-slate-300" onClick={() => insertVariable('{{ .ManagerNote }}')} title="Nota del Responsable">
+                                Nota Admin
                             </Button>
 
                             <span className="w-px h-5 bg-slate-300 mx-2 self-center"></span>
-                            <span className="text-[10px] text-slate-400 self-center font-bold tracking-widest uppercase">Inyección Rápida de Supabase</span>
+                            <span className="text-[10px] text-slate-400 self-center font-bold tracking-widest uppercase">Palabras clave del sistema</span>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 flex-1 relative min-h-[400px] border-none">

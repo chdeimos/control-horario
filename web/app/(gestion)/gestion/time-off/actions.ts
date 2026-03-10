@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { sendEmailNotification } from '@/lib/email'
+import { sendTemplatedEmail } from '@/lib/send-custom-email'
 
 async function checkTimeOffOverlap(userId: string, startDate: string, endDate: string, requestId?: string) {
     const supabase = await createClient()
@@ -176,24 +176,20 @@ export async function updateRequestStatus(requestId: string, status: 'pending' |
         const userEmail = userData.user?.email
 
         if (userEmail) {
-            let subject = `Actualización de Solicitud 📅`
-            let html = `<p>Hola ${request.profiles.full_name},</p>`
-
-            if (status === 'approved') {
-                subject = `Solicitud Aprobada ✅`
-                html += `<p>Tu solicitud del <strong>${request.start_date}</strong> al <strong>${request.end_date}</strong> ha sido <strong>APROBADA</strong>.</p>`
-            } else if (status === 'rejected') {
-                subject = `Solicitud Rechazada ❌`
-                html += `<p>Tu solicitud del <strong>${request.start_date}</strong> al <strong>${request.end_date}</strong> ha sido <strong>RECHAZADA</strong>.</p>`
-                if (managerNote) {
-                    html += `<p><strong>Motivo del rechazo:</strong> ${managerNote}</p>`
-                }
-            } else {
-                subject = `Solicitud Pospuesta ⏳`
-                html += `<p>Tu solicitud del <strong>${request.start_date}</strong> al <strong>${request.end_date}</strong> ha vuelto al estado <strong>PENDIENTE</strong>.</p>`
+            const typeKey = status === 'approved' ? 'time_off_approved' : status === 'rejected' ? 'time_off_rejected' : null
+            
+            if (typeKey) {
+                await sendTemplatedEmail(
+                    userEmail,
+                    typeKey,
+                    {
+                        FullName: request.profiles.full_name,
+                        StartDate: request.start_date,
+                        EndDate: request.end_date,
+                        ManagerNote: managerNote || ''
+                    }
+                )
             }
-
-            await sendEmailNotification(userEmail, subject, html)
         }
     } catch (err) {
         console.error("Email fetch failed:", err)
@@ -253,17 +249,17 @@ export async function editTimeOffRequest(requestId: string, formData: FormData) 
         const userEmail = userData.user?.email
 
         if (userEmail) {
-            const subject = `Solicitud Modificada ✏️`
-            const html = `
-                <p>Hola ${updatedRequest.profiles.full_name},</p>
-                <p>Los detalles de la solicitud han sido modificados:</p>
-                <ul>
-                    <li>Tipo: ${type}</li>
-                    <li>Fechas: ${start} a ${end}</li>
-                    <li>Motivo: ${reason}</li>
-                </ul>
-            `
-            await sendEmailNotification(userEmail, subject, html)
+            await sendTemplatedEmail(
+                userEmail,
+                'time_off_modified',
+                {
+                    FullName: updatedRequest.profiles.full_name,
+                    Type: type,
+                    StartDate: start,
+                    EndDate: end,
+                    Reason: reason
+                }
+            )
         }
     } catch (err) { console.error(err) }
 
@@ -322,15 +318,17 @@ export async function adminCreateTimeOff(formData: FormData) {
         const userEmail = userData.user?.email
 
         if (userEmail) {
-            const subject = `Nueva Ausencia Programada 📅`
-            const html = `
-                <p>Hola ${targetProfile.full_name},</p>
-                <p>Se ha registrado una nueva <strong>${type === 'vacation' ? 'Vacación' : type === 'medical' ? 'Baja Médica' : 'Ausencia'}</strong> en tu calendario por parte de administración.</p>
-                <p><strong>Fechas:</strong> del ${start} al ${end}</p>
-                ${reason ? `<p><strong>Motivo/Nota:</strong> ${reason}</p>` : ''}
-                <p>Esta ausencia ya ha sido aprobada y se verá reflejada en tu panel.</p>
-            `
-            await sendEmailNotification(userEmail, subject, html)
+            await sendTemplatedEmail(
+                userEmail,
+                'time_off_modified', // Use modified or a specific one for admin creation
+                {
+                    FullName: targetProfile.full_name,
+                    Type: type === 'vacation' ? 'Vacación' : type === 'medical' ? 'Baja Médica' : 'Ausencia',
+                    StartDate: start,
+                    EndDate: end,
+                    Reason: reason || 'Programada por administración'
+                }
+            )
         }
     } catch (err) { console.error(err) }
 
@@ -399,14 +397,15 @@ export async function deleteTimeOffRequest(requestId: string) {
         const userEmail = userData.user?.email
 
         if (userEmail) {
-            const subject = `Solicitud Anulada 🚫`
-            const html = `
-                <p>Hola ${request.profiles.full_name},</p>
-                <p>Te informamos de que tu solicitud de <strong>${request.request_type === 'vacation' ? 'Vacaciones' : 'Ausencia'}</strong> ha sido <strong>ANULADA</strong> y eliminada del sistema por administración.</p>
-                <p><strong>Fechas que han sido canceladas:</strong> del ${request.start_date} al ${request.end_date}</p>
-                <p>Si crees que esto es un error, por favor contacta con tu responsable.</p>
-            `
-            await sendEmailNotification(userEmail, subject, html)
+            await sendTemplatedEmail(
+                userEmail,
+                'time_off_deleted',
+                {
+                    FullName: request.profiles.full_name,
+                    StartDate: request.start_date,
+                    EndDate: request.end_date
+                }
+            )
         }
     } catch (err) { console.error("Cancellation email failed:", err) }
 

@@ -1,5 +1,5 @@
 import { createAdminClient } from './supabase/admin'
-import { sendEmailNotification } from './email'
+import { sendTemplatedEmail } from './send-custom-email'
 
 export async function checkAndNotifyMissingClocks() {
     const supabase = createAdminClient()
@@ -92,14 +92,13 @@ export async function checkAndNotifyMissingClocks() {
             auditResults.push(`Limpieza: Fichaje olvidado de <b>${prof?.full_name}</b> del día ${entry.clock_in.split('T')[0]} cerrado (excedió 16h).`)
 
             if (prof?.email) {
-                await sendEmailNotification(
+                await sendTemplatedEmail(
                     prof.email,
-                    'Aviso: Fichaje Antiguo Cerrado Automáticamente 🕒',
-                    `
-                    <p>Hola ${prof.full_name},</p>
-                    <p>Se ha detectado un fichaje sin salida del día <strong>${entry.clock_in.split('T')[0]}</strong> que ha permanecido abierto más de 16 horas.</p>
-                    <p>El sistema lo ha cerrado automáticamente. Por favor, revisa tus registros.</p>
-                    `
+                    'forgotten_clock_closed',
+                    {
+                        FullName: prof.full_name,
+                        Date: entry.clock_in.split('T')[0]
+                    }
                 )
             }
         }
@@ -230,19 +229,13 @@ export async function checkAndNotifyMissingClocks() {
             ? `<p>Resumen de acciones realizadas:</p><ul>${auditResults.map(r => `<li>${r}</li>`).join('')}</ul>`
             : '<p>No se han detectado incidencias ni se han requerido acciones automáticas en este ciclo.</p>'
 
-        await sendEmailNotification(
+        await sendTemplatedEmail(
             adminEmail,
-            '🤖 Reporte Cron: Vigilancia de Fichajes',
-            `
-            <div style="font-family: sans-serif; color: #333;">
-                <h2 style="color: #2563eb;">Vigilancia Completada</h2>
-                <p>El sistema ha revisado los fichajes a las <strong>${madridTime}</strong> (Hora Madrid).</p>
-                ${reportBody}
-                <br>
-                <hr>
-                <p style="font-size: 10px; color: #999;">AVISO: Este reporte es temporal para verificar el funcionamiento del cron. Se eliminará a petición del administrador.</p>
-            </div>
-            `
+            'cron_surveillance_report',
+            {
+                Time: madridTime,
+                ReportBody: reportBody
+            }
         )
     }
 }
@@ -291,16 +284,15 @@ async function processClockEvent(supabase: any, profile: any, eventTimeStr: stri
 
             auditResults.push(`Aviso enviado a <b>${profile.full_name}</b>: Entrada pendiente (${eventTimeStr})`)
 
-            await sendEmailNotification(
+            await sendTemplatedEmail(
                 profile.email,
-                'Recordatorio: Fichaje de Entrada Pendiente ⏰',
-                `
-                <p>Hola ${profile.full_name},</p>
-                <p>Según tu horario, deberías haber fichado tu <strong>${label}</strong> a las <strong>${eventTimeStr}</strong>.</p>
-                <p>Se ha detectado un retraso superior al margen de cortesía de la empresa (<strong>${marginMinutes} min</strong>).</p>
-                <p>Por favor, realiza tu fichaje lo antes posible desde la Web, App o Terminal de la empresa.</p>
-                <p>Evita incidencias automáticas asegurándote de registrar tu jornada a tiempo.</p>
-                `
+                'clock_in_reminder',
+                {
+                    FullName: profile.full_name,
+                    Label: label,
+                    EventTime: eventTimeStr,
+                    Margin: String(marginMinutes)
+                }
             )
         }
     }
@@ -358,15 +350,13 @@ async function processClockOutEvent(supabase: any, profile: any, eventTimeStr: s
                     event_key: eventKey
                 })
 
-                await sendEmailNotification(
+                await sendTemplatedEmail(
                     profile.email,
-                    'Aviso: Jornada Cerrada Automáticamente ⚠️',
-                    `
-                    <p>Hola ${profile.full_name},</p>
-                    <p>Tu jornada estaba programada para finalizar a las <strong>${eventTimeStr}</strong>.</p>
-                    <p>Al haber pasado el tiempo lÃmite de cortesÃa sin registro de salida, el sistema ha <strong>cerrado tu sesiÃ³n de forma automÃ¡tica</strong> para evitar que el contador siga corriendo.</p>
-                    <p>Se ha generado una <strong>incidencia automÃ¡tica</strong> que deberÃ¡s revisar y justificar ante administraciÃ³n.</p>
-                    `
+                    'clock_out_auto_closed',
+                    {
+                        FullName: profile.full_name,
+                        EventTime: eventTimeStr
+                    }
                 )
             }
         }
@@ -421,15 +411,14 @@ async function processFlexibleAutoClockOut(supabase: any, profile: any, schedule
 
             auditResults.push(`Cierre Automático (FLEX): <b>${profile.full_name}</b> cerrado tras ${workedHours.toFixed(1)}h de trabajo.`)
 
-            await sendEmailNotification(
+            await sendTemplatedEmail(
                 profile.email,
-                'Aviso: Jornada Flexible Cerrada Automáticamente 🌙',
-                `
-                <p>Hola ${profile.full_name},</p>
-                <p>El sistema ha detectado una sesión abierta de duración inusual (<strong>${workedHours.toFixed(1)} horas</strong>).</p>
-                <p>Al haber superado ampliamente tu objetivo diario de <strong>${targetHours}h</strong>, hemos procedido a cerrar el fichaje por seguridad.</p>
-                <p>Si has trabajado estas horas realmente, contacta con administración para validar el registro.</p>
-                `
+                'flexible_clock_out_auto_closed',
+                {
+                    FullName: profile.full_name,
+                    WorkedHours: workedHours.toFixed(1),
+                    TargetHours: String(targetHours)
+                }
             )
         }
     }
@@ -506,15 +495,13 @@ async function processDailyAbsenceCheck(supabase: any, profile: any, schedule: a
 
             auditResults.push(`Falta de Asistencia: <b>${profile.full_name}</b> no ha fichado hoy. Incidencia creada.`)
 
-            await sendEmailNotification(
+            await sendTemplatedEmail(
                 profile.email,
-                'Aviso de Incidencia: Ausencia no Registrada ⚠️',
-                `
-                <p>Hola ${profile.full_name},</p>
-                <p>Se ha detectado que hoy (<strong>${dateStr}</strong>) no has realizado ningún registro horario a pesar de tener una jornada prevista en tu calendario.</p>
-                <p>Se ha generado una <strong>incidencia automática</strong> de tipo "Horario laboral sin fichar" para su revisión por parte de RRHH.</p>
-                <p>Si esto se debe a un error o causa justificada, por favor contacta con tu responsable.</p>
-                `
+                'daily_absence_incident',
+                {
+                    FullName: profile.full_name,
+                    Date: dateStr
+                }
             )
         }
     }

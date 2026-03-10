@@ -1,6 +1,6 @@
 import { createAdminClient } from './supabase/admin'
 import { generatePDF } from './pdf-generator'
-import { sendEmailNotification } from './email'
+import { sendTemplatedEmail } from './send-custom-email'
 import JSZip from 'jszip'
 import { format, subMonths } from 'date-fns'
 
@@ -111,12 +111,13 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
                 const zipContent = await zip.generateAsync({ type: 'nodebuffer' })
 
                 // Send Email
-                const emailResult = await sendEmailNotification(
+                const emailResult = await sendTemplatedEmail(
                     company.email!,
-                    `Informes de Jornada Mensuales - ${month}/${year}`,
-                    `<p>Hola,</p>
-                     <p>Adjunto encontrarás los informes de jornada de todos tus empleados correspondientes al mes de <b>${month}/${year}</b>.</p>
-                     <p>Este es un envío automático del sistema de Control Horario.</p>`,
+                    'monthly_report',
+                    {
+                        Month: String(month),
+                        Year: String(year)
+                    },
                     [{
                         filename: `${folderName}.zip`,
                         content: zipContent

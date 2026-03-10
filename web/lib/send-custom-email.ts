@@ -49,3 +49,48 @@ export async function sendCustomAuthEmail(email: string, type: 'invite' | 'recov
 
     return await sendEmailNotification(email, targetBase.title, finalHtml)
 }
+
+export async function sendTemplatedEmail(
+    email: string,
+    type: keyof typeof defaultTemplates,
+    data: Record<string, string>,
+    attachments?: { filename: string, content: Buffer | string | Uint8Array }[]
+) {
+    const supabaseAdmin = createAdminClient()
+
+    const { data: globalSettings } = await supabaseAdmin
+        .from('system_settings')
+        .select('key, value')
+        .in('key', ['app_name', 'saas_logo_web', 'saas_legal_text', `email_template_${type}`])
+
+    const settingsMap = (globalSettings || []).reduce((acc: any, item: any) => {
+        acc[item.key] = item.value
+        return acc
+    }, {})
+
+    const appName = settingsMap.app_name || 'Control Horario'
+    const logoUrl = settingsMap.saas_logo_web || ''
+    const legalText = settingsMap.saas_legal_text || ''
+    const customTemplate = settingsMap[`email_template_${type}`]
+
+    const targetBase = defaultTemplates[type]
+    let mailContent = customTemplate || targetBase.content
+
+    // Replace all placeholders like {{ .VariableName }} or {{.VariableName}}
+    Object.entries(data).forEach(([key, value]) => {
+        const regex = new RegExp(`\\{\\{\\s*\\.${key}\\s*\\}\\}`, 'g')
+        mailContent = mailContent.replace(regex, value)
+    })
+
+    // Special handling for manager note block (if/end)
+    if (!data.ManagerNote) {
+        mailContent = mailContent.replace(/\{\{\s*if\s*\.ManagerNote\s*\}\}[\s\S]*?\{\{\s*padding\s*\}\}|.*\{\{\s*end\s*\}\}/g, '') // Simplified for common use
+    } else {
+        mailContent = mailContent.replace(/\{\{\s*if\s*\.ManagerNote\s*\}\}/g, '').replace(/\{\{\s*end\s*\}\}/g, '')
+    }
+
+    const finalHtml = EMAIL_BASE_HTML(targetBase.title, mailContent, appName, logoUrl, legalText)
+
+    return await sendEmailNotification(email, targetBase.title, finalHtml, attachments)
+}
+

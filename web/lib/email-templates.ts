@@ -106,5 +106,108 @@ export const defaultTemplates = {
             </div>
             <p style="font-size: 14px; color: #64748b;">Si tú no iniciaste esta solicitud, ignora este mensaje.</p>
         `
+    },
+    monthly_report: {
+        title: "Informes de Jornada Mensuales",
+        content: `
+            <p>Hola,</p>
+            <p>Adjunto encontrarás los informes de jornada de todos tus empleados correspondientes al mes de <strong>{{ .Month }}/{{ .Year }}</strong>.</p>
+            <p>Estos documentos son necesarios para el cumplimiento de la normativa vigente sobre el registro de jornada laboral.</p>
+            <p style="font-size: 14px; color: #64748b;">Este es un envío automático generado por el sistema de Control Horario.</p>
+        `
+    },
+    forgotten_clock_closed: {
+        title: "Aviso: Fichaje Antiguo Cerrado Automáticamente",
+        content: `
+            <p>Hola {{ .FullName }},</p>
+            <p>Se ha detectado un fichaje sin salida del día <strong>{{ .Date }}</strong> que ha permanecido abierto más de 16 horas.</p>
+            <p>El sistema lo ha cerrado automáticamente por seguridad. Por favor, revisa tus registros en la plataforma.</p>
+        `
+    },
+    clock_in_reminder: {
+        title: "Recordatorio: Fichaje de Entrada Pendiente",
+        content: `
+            <p>Hola {{ .FullName }},</p>
+            <p>Según tu horario, deberías haber fichado tu <strong>{{ .Label }}</strong> a las <strong>{{ .EventTime }}</strong>.</p>
+            <p>Se ha detectado un retraso superior al margen de cortesía permitido (<strong>{{ .Margin }} min</strong>).</p>
+            <p>Por favor, realiza tu fichaje lo antes posible para evitar incidencias automáticas.</p>
+        `
+    },
+    clock_out_auto_closed: {
+        title: "Aviso: Jornada Cerrada Automáticamente",
+        content: `
+            <p>Hola {{ .FullName }},</p>
+            <p>Tu jornada estaba programada para finalizar a las <strong>{{ .EventTime }}</strong>.</p>
+            <p>Al haber pasado el límite de cortesía sin registro de salida, el sistema ha <strong>cerrado tu sesión automáticamente</strong>.</p>
+            <p>Se ha generado una incidencia que deberá ser revisada por administración.</p>
+        `
+    },
+    flexible_clock_out_auto_closed: {
+        title: "Aviso: Jornada Flexible Cerrada Automáticamente",
+        content: `
+            <p>Hola {{ .FullName }},</p>
+            <p>El sistema ha detectado una sesión abierta de duración inusual (<strong>{{ .WorkedHours }} horas</strong>).</p>
+            <p>Al haber superado tu objetivo diario de <strong>{{ .TargetHours }}h</strong>, hemos cerrado el fichaje por seguridad.</p>
+            <p>Si estas horas son correctas, contacta con administración para validarlas.</p>
+        `
+    },
+    daily_absence_incident: {
+        title: "Aviso de Incidencia: Ausencia no Registrada",
+        content: `
+            <p>Hola {{ .FullName }},</p>
+            <p>Se ha detectado que hoy (<strong>{{ .Date }}</strong>) no has realizado ningún registro horario a pesar de tener una jornada prevista.</p>
+            <p>Se ha generado una <strong>incidencia automática</strong> de tipo "Ausencia no Registrada" para revisión por RRHH.</p>
+        `
+    },
+    time_off_approved: {
+        title: "Solicitud de Ausencia Aprobada",
+        content: `
+            <p>Hola {{ .FullName }},</p>
+            <p>Tu solicitud de ausencia del <strong>{{ .StartDate }}</strong> al <strong>{{ .EndDate }}</strong> ha sido <strong>APROBADA</strong>.</p>
+            <p>Ya puedes ver este periodo marcado en tu calendario.</p>
+        `
+    },
+    time_off_rejected: {
+        title: "Solicitud de Ausencia Rechazada",
+        content: `
+            <p>Hola {{ .FullName }},</p>
+            <p>Tu solicitud de ausencia del <strong>{{ .StartDate }}</strong> al <strong>{{ .EndDate }}</strong> ha sido <strong>RECHAZADA</strong>.</p>
+            {{ if .ManagerNote }}
+            <p><strong>Motivo:</strong> {{ .ManagerNote }}</p>
+            {{ end }}
+        `
+    },
+    time_off_modified: {
+        title: "Solicitud de Ausencia Modificada",
+        content: `
+            <p>Hola {{ .FullName }},</p>
+            <p>Los detalles de tu solicitud de ausencia han sido modificados por administración:</p>
+            <ul>
+                <li>Tipo: {{ .Type }}</li>
+                <li>Fechas: {{ .StartDate }} a {{ .EndDate }}</li>
+                <li>Motivo: {{ .Reason }}</li>
+            </ul>
+        `
+    },
+    time_off_deleted: {
+        title: "Solicitud de Ausencia Anulada",
+        content: `
+            <p>Hola {{ .FullName }},</p>
+            <p>Te informamos que tu solicitud de ausencia del <strong>{{ .StartDate }}</strong> al <strong>{{ .EndDate }}</strong> ha sido <strong>ANULADA</strong> y eliminada del sistema.</p>
+            <p>Si crees que esto es un error, contacta con tu responsable.</p>
+        `
+    },
+    cron_surveillance_report: {
+        title: "Reporte de Vigilancia de Fichajes",
+        content: `
+            <div style="font-family: sans-serif; color: #333;">
+                <h2 style="color: #2563eb;">Vigilancia Completada</h2>
+                <p>El sistema ha revisado los fichajes a las <strong>{{ .Time }}</strong> (Hora Madrid).</p>
+                {{ .ReportBody }}
+                <br>
+                <hr>
+                <p style="font-size: 10px; color: #999;">AVISO: Este reporte es automático para el control de incidencias del sistema.</p>
+            </div>
+        `
     }
 }
