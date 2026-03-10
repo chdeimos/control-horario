@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from './supabase/admin'
 import { generatePDF } from './pdf-generator'
 import { sendEmailNotification } from './email'
 import JSZip from 'jszip'
 import { format, subMonths } from 'date-fns'
 
 export async function processMonthlyReports(manualTarget?: { month: number, year: number }) {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Calculate last month if not provided
     const now = new Date()
