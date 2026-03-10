@@ -107,48 +107,21 @@ export async function getGlobalStats() {
         })
     }
 
-    // 5. Audit Logs (Synthetic from recent table activity)
-    const { data: recentCompanies } = await supabase
-        .from('companies')
-        .select('name, created_at')
+    // 5. Real Audit Logs (from admin_access_logs)
+    const { data: adminAccessLogs } = await supabase
+        .from('admin_access_logs')
+        .select('*')
         .order('created_at', { ascending: false })
-        .limit(3)
+        .limit(10)
 
-    const { data: recentProfiles } = await supabase
-        .from('profiles')
-        .select('full_name, created_at')
-        .order('created_at', { ascending: false })
-        .limit(3)
-
-    const { data: recentInvoices } = await supabase
-        .from('invoices')
-        .select('amount, status, created_at, companies(name)')
-        .order('created_at', { ascending: false })
-        .limit(4)
-
-    const auditLogs = [
-        ...(recentCompanies || []).map(c => ({
-            type: 'DEPLOY_NODE',
-            message: `Nueva instancia desplegada: ${c.name}`,
-            time: c.created_at,
-            status: 'success'
-        })),
-        ...(recentProfiles || []).map(p => ({
-            type: 'USER_AUTH',
-            message: `Nuevo acceso registrado: ${p.full_name}`,
-            time: p.created_at,
-            status: 'neutral'
-        })),
-        ...(recentInvoices || []).map((i: any) => {
-            const companyName = Array.isArray(i.companies) ? i.companies[0]?.name : i.companies?.name;
-            return {
-                type: 'REVENUE_SIG',
-                message: `Pago ${i.status === 'paid' ? 'asentado' : 'pendiente'} por ${i.amount}€ (${companyName || 'Sede Desconocida'})`,
-                time: i.created_at,
-                status: i.status === 'paid' ? 'success' : 'warning'
-            }
-        })
-    ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    const auditLogs = (adminAccessLogs || []).map(log => ({
+        type: log.success ? 'ACCESO_ADM' : 'FALLO_ADM',
+        message: log.success
+            ? `Acceso exitoso: ${log.username}`
+            : `Intento fallido: ${log.username} (${log.error_message || 'Credenciales inválidas'})`,
+        time: log.created_at,
+        status: log.success ? 'success' : 'warning'
+    }))
 
     return {
         activeCompanies: activeCompanies || 0,

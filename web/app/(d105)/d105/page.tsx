@@ -1,5 +1,8 @@
 import { getGlobalStats } from './actions'
 import { Card, CardContent } from "@/components/ui/card"
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+import Link from 'next/link'
 import {
     TrendingUp,
     Users,
@@ -11,7 +14,8 @@ import {
     ArrowUpRight,
     Terminal,
     ChevronRight,
-    Search
+    Search,
+    ShieldAlert
 } from "lucide-react"
 
 export const dynamic = 'force-dynamic'
@@ -152,42 +156,51 @@ export default async function AdminDashboardPage() {
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-white/40">
-                                        <Terminal size={14} />
+                                        <ShieldAlert size={14} />
                                     </div>
-                                    <span className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Sistema de Auditoría</span>
+                                    <span className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Seguridad d105</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[8px] font-black text-white/20 uppercase tracking-widest">Empleados</span>
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                                    <span className="text-[8px] font-black text-emerald-500/50 uppercase tracking-widest">En Vivo</span>
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse"></div>
                                 </div>
                             </div>
 
-                            <div className="flex-1 space-y-6 overflow-y-auto no-scrollbar pr-2">
-                                {stats.auditLogs?.map((log: any, i: number) => (
-                                    <div key={i} className="group/log border-l-2 border-white/5 pl-5 py-0.5 hover:border-[#3b60c1]/40 transition-all">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className={`text-[8px] font-black px-2 py-1 rounded-sm ${log.status === 'success' ? 'text-emerald-400 bg-emerald-400/10' :
-                                                log.status === 'warning' ? 'text-amber-400 bg-amber-400/10' :
-                                                    'text-blue-400 bg-blue-400/10'
-                                                }`}>
-                                                {log.type}
-                                            </span>
-                                            <span className="text-[8px] font-bold text-white/20 tabular-nums uppercase">
-                                                {new Date(log.time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                                            </span>
+                            <div className="flex-1 space-y-5 overflow-y-auto no-scrollbar pr-2">
+                                {stats.auditLogs?.length > 0 ? (
+                                    stats.auditLogs.map((log: any, i: number) => (
+                                        <div key={i} className="group/log border-l-2 border-white/5 pl-5 py-0.5 hover:border-[#3b60c1]/40 transition-all">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <span className={`text-[8px] font-black px-2 py-1 rounded-sm ${log.status === 'success' ? 'text-emerald-400 bg-emerald-400/10' :
+                                                    'text-rose-400 bg-rose-400/10'
+                                                    }`}>
+                                                    {log.type}
+                                                </span>
+                                                <span className="text-[8px] font-bold text-white/20 tabular-nums uppercase">
+                                                    {format(new Date(log.time), 'HH:mm (dd MMM)', { locale: es })}
+                                                </span>
+                                            </div>
+                                            <p className="text-[10px] font-bold text-white/50 leading-relaxed group-hover/log:text-white/80 transition-colors line-clamp-2">
+                                                {log.message}
+                                            </p>
                                         </div>
-                                        <p className="text-[10px] font-bold text-white/50 leading-relaxed group-hover/log:text-white/80 transition-colors">
-                                            {log.message}
-                                        </p>
+                                    ))
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center opacity-20 gap-4">
+                                        <Activity size={32} className="text-white" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-white">Sin actividad detectada</p>
                                     </div>
-                                ))}
+                                )}
                             </div>
 
-                            <div className="mt-8 pt-6 border-t border-white/5">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.3em]">Escuchando_eventos_UDP</p>
-                                    <Activity size={10} className="text-[#3b60c1] animate-pulse" />
-                                </div>
+                            <div className="mt-6 pt-6 border-t border-white/5">
+                                <Link
+                                    href="/d105/logs"
+                                    className="flex items-center justify-center gap-2 w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all group/btn"
+                                >
+                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Registros Completos</span>
+                                    <ArrowUpRight size={14} className="text-white/40 group-hover/btn:text-[#3b60c1] group-hover/btn:translate-x-0.5 transition-all" />
+                                </Link>
                             </div>
                         </div>
 
