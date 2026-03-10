@@ -111,16 +111,16 @@ export async function getGlobalStats() {
     const { data: adminAccessLogs } = await supabase
         .from('admin_access_logs')
         .select('*')
+        .eq('success', false)
         .order('created_at', { ascending: false })
         .limit(10)
 
     const auditLogs = (adminAccessLogs || []).map(log => ({
-        type: log.success ? 'ACCESO_ADM' : 'FALLO_ADM',
-        message: log.success
-            ? `Acceso exitoso: ${log.username}`
-            : `Intento fallido: ${log.username} (${log.error_message || 'Credenciales inválidas'})`,
+        type: 'FALLO DE ACCESO',
+        message: `Intento fallido: ${log.username} (${log.error_message || 'Credenciales inválidas'})`,
         time: log.created_at,
-        status: log.success ? 'success' : 'warning'
+        status: 'warning',
+        ip: log.ip_address
     }))
 
     return {

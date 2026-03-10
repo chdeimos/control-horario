@@ -169,16 +169,19 @@ export default async function AdminDashboardPage() {
                             <div className="flex-1 space-y-5 overflow-y-auto no-scrollbar pr-2">
                                 {stats.auditLogs?.length > 0 ? (
                                     stats.auditLogs.map((log: any, i: number) => (
-                                        <div key={i} className="group/log border-l-2 border-white/5 pl-5 py-0.5 hover:border-[#3b60c1]/40 transition-all">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <span className={`text-[8px] font-black px-2 py-1 rounded-sm ${log.status === 'success' ? 'text-emerald-400 bg-emerald-400/10' :
-                                                    'text-rose-400 bg-rose-400/10'
-                                                    }`}>
-                                                    {log.type}
-                                                </span>
-                                                <span className="text-[8px] font-bold text-white/20 tabular-nums uppercase">
-                                                    {format(new Date(log.time), 'HH:mm (dd MMM)', { locale: es })}
-                                                </span>
+                                        <div key={i} className="group/log border-l-2 border-white/5 pl-5 py-4 hover:border-[#3b60c1]/40 transition-all space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[8px] font-black px-2 py-1 rounded-sm text-rose-400 bg-rose-400/10 w-fit">
+                                                        {log.type}
+                                                    </span>
+                                                    <span className="text-[8px] font-bold text-white/20 tabular-nums uppercase">
+                                                        {format(new Date(log.time), 'HH:mm (dd MMM)', { locale: es })}
+                                                    </span>
+                                                </div>
+                                                <div className="text-lg font-black text-white tabular-nums tracking-tighter bg-white/5 px-3 py-1 rounded-lg border border-white/10 shadow-xl group-hover/log:bg-white/10 transition-colors">
+                                                    {log.ip}
+                                                </div>
                                             </div>
                                             <p className="text-[10px] font-bold text-white/50 leading-relaxed group-hover/log:text-white/80 transition-colors line-clamp-2">
                                                 {log.message}
