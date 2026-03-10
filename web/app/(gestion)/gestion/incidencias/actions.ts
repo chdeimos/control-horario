@@ -100,9 +100,31 @@ export async function getIncidents(params: {
 
     if (error) return { error: error.message }
 
+    // Global count of pending incidents for the header flashcard
+    let pendingQuery = supabase
+        .from('time_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('company_id', profile.company_id)
+        .or('is_manual_correction.eq.true,is_incident.eq.true')
+        .eq('is_audited', false)
+
+    if (profile.role === 'manager') {
+        // We need to filter by department for managers
+        const { data: deptProfiles } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('department_id', profile.department_id)
+
+        const deptUserIds = deptProfiles?.map(p => p.id) || []
+        pendingQuery = pendingQuery.in('user_id', deptUserIds)
+    }
+
+    const { count: pendingCount } = await pendingQuery
+
     return {
         incidents: incidents || [],
-        count: count || 0
+        count: count || 0,
+        pendingCount: pendingCount || 0
     }
 }
 

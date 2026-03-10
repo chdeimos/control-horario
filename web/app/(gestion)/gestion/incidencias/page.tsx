@@ -37,6 +37,7 @@ export default async function IncidentsPage({
 
     const incidents = res.incidents || []
     const count = res.count || 0
+    const pendingCount = (res as any).pendingCount || 0
 
     return (
         <div className="animate-in fade-in duration-700 min-h-screen bg-[#f3f4f9] md:-m-12">
@@ -62,7 +63,7 @@ export default async function IncidentsPage({
                             </div>
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100/60 mb-1">Pendientes de auditar</p>
-                                <p className="text-2xl font-black text-white tracking-tight tabular-nums italic">{count}</p>
+                                <p className="text-2xl font-black text-white tracking-tight tabular-nums italic">{pendingCount}</p>
                             </div>
                         </div>
                     </div>
