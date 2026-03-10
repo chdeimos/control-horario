@@ -134,6 +134,7 @@ export async function createManualIncident(data: {
             clock_in: data.clockIn,
             clock_out: data.clockOut,
             is_manual_correction: true,
+            origin: 'manual_correction',
             is_incident: true,
             is_audited: false,
             correction_reason: data.reason,
