@@ -159,10 +159,18 @@ export function generatePDF(company: any, employee: any, entries: any[], month: 
             // 1. Watermark (Translucent Logo)
             if (branding.saas_logo_pdf) {
                 try {
-                    // Try adding watermark with transparency if supported
-                    // Note: setGState might need additional setup in some jsPDF versions, 
-                    // a simple approach is just adding it with low alpha if image supports it
-                    doc.addImage(branding.saas_logo_pdf, 'PNG', 55, 100, 100, 100, undefined, 'FAST');
+                    // Use GState for transparency if available
+                    // @ts-ignore
+                    if (typeof doc.GState === 'function' || (doc as any).internal.processContext) {
+                        const gs = new (doc as any).GState({ opacity: 0.1 });
+                        doc.saveGraphicsState();
+                        doc.setGState(gs);
+                        doc.addImage(branding.saas_logo_pdf, 'PNG', 55, 100, 100, 100, undefined, 'FAST');
+                        doc.restoreGraphicsState();
+                    } else {
+                        // Fallback simple add
+                        doc.addImage(branding.saas_logo_pdf, 'PNG', 55, 100, 100, 100, undefined, 'FAST');
+                    }
                 } catch (e) {
                     console.warn("Could not add branding logo to PDF:", e);
                 }
