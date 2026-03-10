@@ -46,7 +46,25 @@ export function ReportGenerator({
     useEffect(() => {
         async function loadBranding() {
             const b = await getBrandingSettings()
-            setBranding(b)
+
+            // Convert Logo to base64 for reliable adding to PDF (Client Side)
+            if (b.saas_logo_pdf) {
+                try {
+                    const response = await fetch(b.saas_logo_pdf);
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        b.saas_logo_pdf = reader.result;
+                        setBranding(b);
+                    };
+                    reader.readAsDataURL(blob);
+                } catch (e) {
+                    console.error("Could not fetch branding logo for PDF:", e);
+                    setBranding(b);
+                }
+            } else {
+                setBranding(b);
+            }
         }
         loadBranding()
     }, [])

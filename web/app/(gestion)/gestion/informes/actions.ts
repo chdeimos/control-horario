@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 export async function getMonthlyReportData(userId: string, month: number, year: number) {
     const supabase = await createClient()
@@ -61,7 +62,7 @@ export async function getMonthlyReportData(userId: string, month: number, year: 
 }
 
 export async function getBrandingSettings() {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data } = await supabase
         .from('system_settings')
         .select('key, value')

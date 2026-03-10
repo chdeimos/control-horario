@@ -151,8 +151,8 @@ export function generatePDF(company: any, employee: any, entries: any[], month: 
     doc.text("(*) Los registros marcados con asterisco han sido objeto de corrección manual autorizada.", 14, finalY + 26)
 
     // Branding & Watermark (SaaS)
-    if (branding) {
-        const pageCount = (doc as any).internal.getNumberOfPages();
+    if (branding && Object.keys(branding).length > 0) {
+        const pageCount = doc.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
 
