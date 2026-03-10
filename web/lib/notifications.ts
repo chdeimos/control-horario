@@ -34,6 +34,12 @@ export async function checkAndNotifyMissingClocks() {
     }
     const currentSeconds = timeToSeconds(currentTimeStr)
 
+    // Robust Madrid Date calculation for queries
+    const madridDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' })
+    const todayStr = madridDateFormatter.format(now)
+    const startOfMadridToday = `${todayStr}T00:00:00+01:00`
+    const endOfMadridToday = `${todayStr}T23:59:59+01:00`
+
     // 1. Get all active profiles with assigned schedules and their company settings
     const { data: profiles } = await supabase
         .from('profiles')
@@ -58,7 +64,7 @@ export async function checkAndNotifyMissingClocks() {
         .from('time_entries')
         .select('id, clock_in, profiles(id, full_name, email)')
         .is('clock_out', null)
-        .lt('clock_in', now.toISOString().split('T')[0] + 'T00:00:00') // Started before today
+        .lt('clock_in', startOfMadridToday) // Started before 00:00 today in Madrid
 
     if (forgottenEntries && forgottenEntries.length > 0) {
         for (const entry of forgottenEntries) {
@@ -139,7 +145,9 @@ export async function checkAndNotifyMissingClocks() {
                 now,
                 'entrada',
                 marginMinutes,
-                auditResults
+                auditResults,
+                startOfMadridToday,
+                endOfMadridToday
             )
 
             // Check Clock-In 2 (optional)
@@ -154,7 +162,9 @@ export async function checkAndNotifyMissingClocks() {
                     now,
                     'entrada (segundo turno)',
                     marginMinutes,
-                    auditResults
+                    auditResults,
+                    startOfMadridToday,
+                    endOfMadridToday
                 )
             }
 
@@ -205,7 +215,9 @@ export async function checkAndNotifyMissingClocks() {
             currentSeconds,
             todayStr,
             now,
-            auditResults
+            auditResults,
+            startOfMadridToday,
+            endOfMadridToday
         )
     }
 
@@ -236,7 +248,7 @@ export async function checkAndNotifyMissingClocks() {
 }
 
 
-async function processClockEvent(supabase: any, profile: any, eventTimeStr: string, eventKeySuffix: string, currentSeconds: number, dateStr: string, now: Date, label: string, marginMinutes: number, auditResults: string[]) {
+async function processClockEvent(supabase: any, profile: any, eventTimeStr: string, eventKeySuffix: string, currentSeconds: number, dateStr: string, now: Date, label: string, marginMinutes: number, auditResults: string[], startOfMadridToday: string, endOfMadridToday: string) {
     const timeToSeconds = (t: string) => {
         const [h, m, s] = t.split(':').map(Number)
         return h * 3600 + (m || 0) * 60 + (s || 0)
@@ -264,8 +276,8 @@ async function processClockEvent(supabase: any, profile: any, eventTimeStr: stri
             .from('time_entries')
             .select('id')
             .eq('user_id', profile.id)
-            .gte('clock_in', `${dateStr}T00:00:00`)
-            .lte('clock_in', `${dateStr}T23:59:59`)
+            .gte('clock_in', startOfMadridToday)
+            .lte('clock_in', endOfMadridToday)
             .limit(1)
             .maybeSingle()
 
@@ -423,7 +435,7 @@ async function processFlexibleAutoClockOut(supabase: any, profile: any, schedule
     }
 }
 
-async function processDailyAbsenceCheck(supabase: any, profile: any, schedule: any, currentSeconds: number, dateStr: string, now: Date, auditResults: string[]) {
+async function processDailyAbsenceCheck(supabase: any, profile: any, schedule: any, currentSeconds: number, dateStr: string, now: Date, auditResults: string[], startOfMadridToday: string, endOfMadridToday: string) {
     const timeToSeconds = (t: string) => {
         if (!t) return 0
         const [h, m] = t.split(':').map(Number)
@@ -462,8 +474,8 @@ async function processDailyAbsenceCheck(supabase: any, profile: any, schedule: a
             .from('time_entries')
             .select('id')
             .eq('user_id', profile.id)
-            .gte('clock_in', `${dateStr}T00:00:00`)
-            .lte('clock_in', `${dateStr}T23:59:59`)
+            .gte('clock_in', startOfMadridToday)
+            .lte('clock_in', endOfMadridToday)
             .limit(1)
             .maybeSingle()
 
