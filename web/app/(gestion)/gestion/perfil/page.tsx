@@ -29,6 +29,12 @@ export default async function ProfilePage() {
 
     if (!profile) redirect('/gestion/login')
 
+    // Fallback if profile email is not synced yet
+    const profileWithEmail = {
+        ...profile,
+        email: profile.email || user.email
+    }
+
     return (
         <div className="animate-in fade-in duration-700 min-h-screen bg-[#f3f4f9] md:-m-12">
             <Tabs defaultValue="info" className="w-full">
@@ -84,9 +90,9 @@ export default async function ProfilePage() {
                                             </div>
                                             <div className="absolute bottom-0 right-0 h-6 w-6 bg-green-500 border-4 border-white rounded-full" />
                                         </div>
-                                        <h3 className="text-2xl font-black text-slate-900 tracking-tighter mb-1">{profile.full_name}</h3>
+                                        <h3 className="text-2xl font-black text-slate-900 tracking-tighter mb-1">{profileWithEmail.full_name}</h3>
                                         <p className="text-xs font-black text-[#3b60c1] uppercase tracking-widest mb-6">
-                                            {profile.role === 'company_admin' ? 'Administrador' : profile.role.replace('_', ' ')}
+                                            {profileWithEmail.role === 'company_admin' ? 'Administrador' : profileWithEmail.role.replace('_', ' ')}
                                         </p>
 
                                         <div className="pt-6 border-t border-slate-50 space-y-4">
@@ -115,7 +121,7 @@ export default async function ProfilePage() {
                                         <h3 className="text-sm font-black uppercase tracking-widest ">Gestión de Identidad</h3>
                                     </div>
 
-                                    <ProfileForm profile={profile} />
+                                    <ProfileForm profile={profileWithEmail} />
 
                                     <div className="mt-16 p-6 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-between">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -130,7 +136,7 @@ export default async function ProfilePage() {
 
                     <TabsContent value="security" className="focus-visible:outline-none">
                         <div className="max-w-4xl mx-auto">
-                            <SecurityTab profile={profile} mode="profile" />
+                            <SecurityTab profile={profileWithEmail} mode="profile" />
                         </div>
                     </TabsContent>
 
