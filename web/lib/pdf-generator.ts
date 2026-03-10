@@ -5,17 +5,32 @@ import { format } from 'date-fns'
 export function generatePDF(company: any, employee: any, entries: any[], month: number, year: number): jsPDF {
     const doc = new jsPDF()
 
-    // Header
-    doc.setFontSize(18)
-    doc.text("Registro de Jornada Mensual", 105, 15, { align: "center" })
+    // Header Compacto
+    doc.setFontSize(14)
+    doc.text("Registro de Jornada Mensual", 105, 12, { align: "center" })
 
-    doc.setFontSize(10)
-    doc.text(`Empresa: ${company.name}`, 14, 30)
-    doc.text(`CIF: ${company.cif}`, 14, 35)
+    doc.setFontSize(9)
+    // Línea 1: Empresa y Trabajador
+    doc.setFont("helvetica", "bold")
+    doc.text("EMPRESA:", 14, 20)
+    doc.setFont("helvetica", "normal")
+    doc.text(`${company.name} (CIF: ${company.cif})`, 33, 20)
 
-    doc.text(`Trabajador: ${employee.full_name}`, 14, 45)
-    doc.text(`NIF: ${employee.nif || '(Sin NIF)'}`, 14, 50)
-    doc.text(`Mes: ${month}/${year}`, 150, 45)
+    doc.setFont("helvetica", "bold")
+    doc.text("TRABAJADOR:", 110, 20)
+    doc.setFont("helvetica", "normal")
+    doc.text(`${employee.full_name}`, 135, 20)
+
+    // Línea 2: NIF y Mes
+    doc.setFont("helvetica", "bold")
+    doc.text("NIF:", 110, 24)
+    doc.setFont("helvetica", "normal")
+    doc.text(`${employee.nif || '(Sin NIF)'}`, 118, 24)
+
+    doc.setFont("helvetica", "bold")
+    doc.text("MES/AÑO:", 160, 24)
+    doc.setFont("helvetica", "normal")
+    doc.text(`${month}/${year}`, 178, 24)
 
     // Process Entries
     const dailyRecords: Record<string, { start: string, end: string, total: number }> = {}
@@ -35,13 +50,13 @@ export function generatePDF(company: any, employee: any, entries: any[], month: 
         const inTime = new Date(entry.clock_in).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
         const outTime = entry.clock_out ? new Date(entry.clock_out).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''
 
-        const modTag = entry.is_manual_correction ? ' (*)' : ''
+        const modTag = entry.is_manual_correction ? '*' : ''
 
         const currentStart = dailyRecords[dateStr].start
         const currentEnd = dailyRecords[dateStr].end
 
-        dailyRecords[dateStr].start = currentStart ? `${currentStart}\n${inTime}${modTag}` : `${inTime}${modTag}`
-        dailyRecords[dateStr].end = currentEnd ? `${currentEnd}\n${outTime}` : outTime
+        dailyRecords[dateStr].start = currentStart ? `${currentStart}, ${inTime}${modTag}` : `${inTime}${modTag}`
+        dailyRecords[dateStr].end = currentEnd ? `${currentEnd}, ${outTime}` : outTime
 
         if (entry.clock_out) {
             const diff = (new Date(entry.clock_out).getTime() - new Date(entry.clock_in).getTime()) / (1000 * 60 * 60)
@@ -62,64 +77,78 @@ export function generatePDF(company: any, employee: any, entries: any[], month: 
     const tableBody = Object.keys(dailyRecords).map(date => {
         const rec = dailyRecords[date]
         return [
-            date,
-            rec.start,
-            rec.end,
+            format(new Date(date), 'dd/MM/yyyy'),
+            rec.start || '-',
+            rec.end || '-',
             formatDuration(rec.total)
         ]
     })
 
-    tableBody.push(['TOTAL', '', '', formatDuration(totalMonthlyHours)])
+    tableBody.push(['TOTAL MENSUAL', '', '', formatDuration(totalMonthlyHours)])
 
     autoTable(doc, {
-        startY: 60,
-        head: [['Fecha', 'Hora Entrada', 'Hora Salida', 'Total Horas']],
+        startY: 30,
+        head: [['Fecha', 'Entradas', 'Salidas', 'Horas']],
         body: tableBody,
         theme: 'grid',
-        headStyles: { fillColor: [66, 66, 66] },
+        styles: { fontSize: 8, cellPadding: 1, rowHeight: 4 },
+        headStyles: { fillColor: [66, 66, 66], fontSize: 8, fontStyle: 'bold' },
+        columnStyles: {
+            0: { cellWidth: 25 },
+            3: { cellWidth: 20, halign: 'right' }
+        },
+        margin: { left: 14, right: 14 }
     })
 
     const incidents = entries.filter(e => e.is_manual_correction)
-    let finalY = (doc as any).lastAutoTable.finalY + 15
+    let finalY = (doc as any).lastAutoTable.finalY + 8
 
     if (incidents.length > 0) {
-        doc.setFontSize(14)
-        doc.text("Anexo: Correcciones Manuales e Incidencias", 14, finalY)
+        if (finalY > 230) {
+            doc.addPage()
+            finalY = 15
+        }
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "bold")
+        doc.text("Incidencias y Modificaciones", 14, finalY)
 
         const incidentBody = incidents.map(inc => [
             format(new Date(inc.clock_in), 'dd/MM/yyyy'),
             `${format(new Date(inc.clock_in), 'HH:mm')} - ${inc.clock_out ? format(new Date(inc.clock_out), 'HH:mm') : '??'}`,
-            inc.correction_reason || 'Sin motivo especificado'
+            inc.correction_reason || 'Sin motivo'
         ])
 
         autoTable(doc, {
-            startY: finalY + 5,
-            head: [['Fecha', 'Horario', 'Motivo de la Modificación']],
+            startY: finalY + 2,
+            head: [['Fecha', 'Horario', 'Motivo']],
             body: incidentBody,
             theme: 'striped',
-            headStyles: { fillColor: [180, 130, 0] },
-            styles: { fontSize: 8 }
+            headStyles: { fillColor: [150, 150, 150] },
+            styles: { fontSize: 7, cellPadding: 1 }
         })
 
-        finalY = (doc as any).lastAutoTable.finalY + 15
+        finalY = (doc as any).lastAutoTable.finalY + 8
     } else {
-        finalY += 5
+        finalY += 2
     }
 
-    if (finalY > 240) {
+    // Pie de página con firmas (Compacto)
+    if (finalY > 260) {
         doc.addPage()
-        finalY = 20
+        finalY = 15
     }
-
-    doc.setFontSize(10)
-    doc.text("Firma de la Empresa:", 14, finalY)
-    doc.text("Firma del Trabajador:", 120, finalY)
-
-    doc.rect(14, finalY + 5, 60, 30)
-    doc.rect(120, finalY + 5, 60, 30)
 
     doc.setFontSize(8)
-    doc.text("(*) El asterisco indica que el registro ha sido objeto de una corrección manual autorizada.", 14, finalY + 42)
+    doc.setFont("helvetica", "bold")
+    doc.text("FIRMA EMPRESA", 14, finalY)
+    doc.text("FIRMA TRABAJADOR", 110, finalY)
+
+    doc.rect(14, finalY + 2, 80, 20) // Caja de firma reducida
+    doc.rect(110, finalY + 2, 80, 20)
+
+    doc.setFontSize(7)
+    doc.setFont("helvetica", "normal")
+    doc.text("(*) Los registros marcados con asterisco han sido objeto de corrección manual autorizada.", 14, finalY + 26)
 
     return doc
 }
