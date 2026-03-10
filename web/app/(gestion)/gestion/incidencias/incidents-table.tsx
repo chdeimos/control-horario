@@ -34,7 +34,10 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Pencil, ArrowRight, History as HistoryIcon, Loader2 } from "lucide-react"
 import { updateTimeEntry } from "@/app/(dashboard)/dashboard/actions"
+import { createManualIncident, getEmployeesForIncidents } from './actions'
 import { useTransition } from "react"
+import { Plus, Users } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface IncidentsTableProps {
     initialIncidents: any[]
@@ -60,6 +63,47 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
     const [start, setStart] = useState("")
     const [end, setEnd] = useState("")
     const [isPending, startTransition] = useTransition()
+
+    // Manual Incident State
+    const [isManualModalOpen, setIsManualModalOpen] = useState(false)
+    const [employees, setEmployees] = useState<any[]>([])
+    const [manualData, setManualData] = useState({
+        userId: '',
+        clockIn: '',
+        clockOut: '',
+        reason: ''
+    })
+
+    useEffect(() => {
+        if (isManualModalOpen) {
+            getEmployeesForIncidents().then(setEmployees)
+        }
+    }, [isManualModalOpen])
+
+    async function handleCreateManual() {
+        if (!manualData.userId || !manualData.clockIn || !manualData.reason) {
+            toast.error("Por favor, completa los campos obligatorios")
+            return
+        }
+
+        startTransition(async () => {
+            const res = await createManualIncident({
+                userId: manualData.userId,
+                clockIn: new Date(manualData.clockIn).toISOString(),
+                clockOut: manualData.clockOut ? new Date(manualData.clockOut).toISOString() : null,
+                reason: manualData.reason
+            })
+
+            if (res.error) {
+                toast.error(res.error)
+            } else {
+                toast.success("Incidencia creada correctamente")
+                setIsManualModalOpen(false)
+                setManualData({ userId: '', clockIn: '', clockOut: '', reason: '' })
+                router.refresh()
+            }
+        })
+    }
 
     const currentPage = parseInt(searchParams.get('page') || '1')
     const pageSize = searchParams.get('pageSize') || '25'
@@ -191,11 +235,18 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
     return (
         <div className="space-y-4">
             <div className="bg-white rounded-lg border border-slate-100 shadow-xl shadow-slate-900/5 transition-all overflow-hidden mb-12">
-                <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+                <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="h-6 w-1 bg-blue-500 rounded-full"></div>
                         <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Panel de Filtros Avanzado</h3>
                     </div>
+                    <Button
+                        onClick={() => setIsManualModalOpen(true)}
+                        className="bg-[#3b60c1] hover:bg-[#2d4a94] text-white font-black uppercase tracking-[0.2em] text-[10px] h-11 px-6 rounded-lg shadow-lg active:scale-95 transition-all flex items-center gap-2"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Nueva Incidencia Manual
+                    </Button>
                 </div>
 
                 <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-x-6 gap-y-8 items-end">
@@ -531,6 +582,98 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
                             </DialogFooter>
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal para Nueva Incidencia Manual */}
+            <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
+                <DialogContent className="rounded-lg sm:max-w-[480px] p-0 overflow-hidden border-none shadow-2xl">
+                    <div className="p-8 bg-slate-50 border-b border-slate-100">
+                        <DialogTitle className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+                            <Plus className="text-[#3b60c1]" size={24} />
+                            Nueva Incidencia
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">
+                            Añade un fichaje manual como incidencia para un empleado.
+                        </DialogDescription>
+                    </div>
+
+                    <div className="p-8 space-y-6 bg-white">
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 leading-none">
+                                <Users size={12} /> Seleccionar Empleado *
+                            </Label>
+                            <Select
+                                value={manualData.userId}
+                                onValueChange={(v) => setManualData({ ...manualData, userId: v })}
+                            >
+                                <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-lg text-sm font-bold text-slate-700">
+                                    <SelectValue placeholder="Elegir empleado..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {employees.map(emp => (
+                                        <SelectItem key={emp.id} value={emp.id} className="font-bold">
+                                            {emp.full_name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 leading-none">
+                                    <Clock size={12} /> Entrada *
+                                </Label>
+                                <Input
+                                    type="datetime-local"
+                                    className="h-12 bg-slate-50 border-slate-200 rounded-lg text-xs font-bold"
+                                    value={manualData.clockIn}
+                                    onChange={(e) => setManualData({ ...manualData, clockIn: e.target.value })}
+                                />
+                            </div>
+                            <div className="space-y-3">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 leading-none">
+                                    <Clock size={12} /> Salida
+                                </Label>
+                                <Input
+                                    type="datetime-local"
+                                    className="h-12 bg-slate-50 border-slate-200 rounded-lg text-xs font-bold"
+                                    value={manualData.clockOut}
+                                    onChange={(e) => setManualData({ ...manualData, clockOut: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 leading-none">
+                                <Pencil size={12} /> Motivo de la Incidencia *
+                            </Label>
+                            <Textarea
+                                className="min-h-[100px] bg-slate-50 border-slate-200 rounded-lg text-sm font-medium resize-none shadow-inner"
+                                placeholder="Ej: Olvido de fichaje, error en el sistema..."
+                                value={manualData.reason}
+                                onChange={(e) => setManualData({ ...manualData, reason: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
+                            <Button
+                                variant="ghost"
+                                onClick={() => setIsManualModalOpen(false)}
+                                className="text-[10px] font-black uppercase tracking-widest text-slate-400"
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                onClick={handleCreateManual}
+                                disabled={isPending}
+                                className="h-12 px-8 bg-[#3b60c1] hover:bg-[#2d4a94] text-white font-bold uppercase tracking-widest text-[11px] shadow-xl active:scale-95 transition-all"
+                            >
+                                {isPending ? <Loader2 className="animate-spin h-4 w-4" /> : "Crear Incidencia"}
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

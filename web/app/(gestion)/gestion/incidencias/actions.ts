@@ -105,3 +105,69 @@ export async function getIncidents(params: {
         count: count || 0
     }
 }
+
+export async function createManualIncident(data: {
+    userId: string,
+    clockIn: string,
+    clockOut: string | null,
+    reason: string
+}) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'No autenticado' }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, company_id')
+        .eq('id', user.id)
+        .single()
+
+    if (!profile || !['super_admin', 'company_admin', 'manager'].includes(profile.role)) {
+        return { error: 'No tienes permisos para crear incidencias.' }
+    }
+
+    const { error } = await supabase
+        .from('time_entries')
+        .insert({
+            user_id: data.userId,
+            company_id: profile.company_id,
+            clock_in: data.clockIn,
+            clock_out: data.clockOut,
+            is_manual_correction: true,
+            is_incident: true,
+            is_audited: false,
+            correction_reason: data.reason,
+            entry_type: 'work'
+        })
+
+    if (error) return { error: error.message }
+    return { success: true }
+}
+
+export async function getEmployeesForIncidents() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('company_id, department_id, role')
+        .eq('id', user.id)
+        .single()
+
+    if (!profile) return []
+
+    let query = supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('company_id', profile.company_id)
+        .eq('status', 'active')
+        .order('full_name')
+
+    if (profile.role === 'manager') {
+        query = query.eq('department_id', profile.department_id)
+    }
+
+    const { data } = await query
+    return data || []
+}
