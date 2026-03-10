@@ -47,9 +47,13 @@ export async function sendEmailNotification(
                 html: html,
                 attachments: resendAttachments
             });
+            const { logEmail } = await import('./logs')
+            await logEmail({ recipient: to, subject, status: 'sent', providerResponse: data })
             return { success: true, data };
-        } catch (error) {
+        } catch (error: any) {
             console.error('Resend Error:', error);
+            const { logEmail } = await import('./logs')
+            await logEmail({ recipient: to, subject, status: 'error', errorMessage: error.message })
         }
     }
 
@@ -63,9 +67,13 @@ export async function sendEmailNotification(
             attachments: nodemailerAttachments
         });
         console.log(`[SMTP EMAIL] To: ${to} | Subject: ${subject} | Attachments: ${attachments?.length || 0}`);
+        const { logEmail } = await import('./logs')
+        await logEmail({ recipient: to, subject, status: 'sent' })
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error('SMTP Error:', error);
+        const { logEmail } = await import('./logs')
+        await logEmail({ recipient: to, subject, status: 'error', errorMessage: error.message })
         return { success: false, error };
     }
 }

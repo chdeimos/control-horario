@@ -19,6 +19,8 @@ export async function signIn(formData: FormData) {
 
     if (error) {
         console.error('Login error:', error)
+        const { logAccess } = await import('@/lib/logs')
+        await logAccess({ email, success: false, errorMessage: error.message })
         return { error: 'Credenciales inválidas o error de conexión.' }
     }
 
@@ -51,8 +53,13 @@ export async function signIn(formData: FormData) {
         // Restricción de acceso para Super Administradores en login normal
         if (profile?.role === 'super_admin') {
             await supabase.auth.signOut()
+            const { logAccess } = await import('@/lib/logs')
+            await logAccess({ userId: user.id, email: user.email, success: false, errorMessage: 'Intento de acceso SuperAdmin por portal normal' })
             return { error: 'Error critico, contacte con su administrador.' }
         }
+
+        const { logAccess } = await import('@/lib/logs')
+        await logAccess({ userId: user.id, email: user.email, success: true })
 
         revalidatePath('/fichaje')
         redirect('/fichaje')

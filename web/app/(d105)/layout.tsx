@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { LayoutDashboard, Building2, Package, CreditCard, Settings, Users, ShieldCheck, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Building2, Package, CreditCard, Settings, Users, ShieldCheck, ChevronRight, History } from 'lucide-react'
 import { LogoutButton } from '@/components/features/logout-button'
 import { SidebarLink } from '@/components/features/sidebar-link'
 
@@ -68,6 +68,7 @@ export default async function AdminLayout({
                 <nav className="flex-1 px-6 space-y-1 relative z-10 overflow-y-auto no-scrollbar">
                     <p className="px-4 pb-4 text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Monitoreo Global</p>
                     <SidebarLink href="/d105" icon={<LayoutDashboard size={18} />} label="Centro de Control" />
+                    <SidebarLink href="/d105/logs" icon={<History size={18} />} label="Logs del Sistema" />
 
                     <div className="h-6"></div>
                     <p className="px-4 pb-4 text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">Gestión de Activos</p>

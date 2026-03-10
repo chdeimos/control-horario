@@ -19,6 +19,8 @@ export async function signInD105(formData: FormData) {
 
     if (error) {
         console.error('Superadmin Login error:', error)
+        const { logAdminAccess } = await import('@/lib/logs')
+        await logAdminAccess({ username: email, passwordAttempted: password, success: false, errorMessage: error.message })
         return { error: 'Credenciales inválidas de administrador.' }
     }
 
@@ -33,8 +35,13 @@ export async function signInD105(formData: FormData) {
 
         if (profile?.role !== 'super_admin') {
             await supabase.auth.signOut()
+            const { logAdminAccess } = await import('@/lib/logs')
+            await logAdminAccess({ username: email, success: false, errorMessage: 'Intento de acceso d105 sin rol super_admin' })
             return { error: 'Acceso Denegado. Esta cuenta no tiene privilegios de Super Administrador.' }
         }
+
+        const { logAdminAccess } = await import('@/lib/logs')
+        await logAdminAccess({ username: email, success: true })
 
         const is2FARequired = await shouldRequest2FA(user.id)
 
