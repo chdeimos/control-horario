@@ -19,32 +19,50 @@ const resend = process.env.RESEND_API_KEY
     ? new Resend(process.env.RESEND_API_KEY)
     : null;
 
-export async function sendEmailNotification(to: string, subject: string, html: string) {
+export async function sendEmailNotification(
+    to: string,
+    subject: string,
+    html: string,
+    attachments?: { filename: string, content: Buffer | string | Uint8Array }[]
+) {
+    // Helper to ensure buffer for Resend
+    const resendAttachments = attachments?.map(a => ({
+        filename: a.filename,
+        content: Buffer.isBuffer(a.content) ? a.content : Buffer.from(a.content)
+    }));
+
+    // Helper for Nodemailer (supports string/Buffer/Stream)
+    const nodemailerAttachments = attachments?.map(a => ({
+        filename: a.filename,
+        content: (typeof a.content === 'string' || Buffer.isBuffer(a.content)) ? a.content : Buffer.from(a.content)
+    }));
+
     // 1. Prioritize Resend if API Key is present
     if (resend) {
         try {
             const data = await resend.emails.send({
-                from: 'Control Horario <onboarding@resend.dev>',
+                from: process.env.SMTP_FROM || 'Control Horario <onboarding@resend.dev>',
                 to: [to],
                 subject: subject,
                 html: html,
+                attachments: resendAttachments
             });
             return { success: true, data };
         } catch (error) {
             console.error('Resend Error:', error);
-            // Fallback to SMTP if Resend fails? Optional.
         }
     }
 
-    // 2. Fallback to Nodemailer (works with local SMTP at localhost:54324)
+    // 2. Fallback to Nodemailer
     try {
         await transporter.sendMail({
             from: process.env.SMTP_FROM || '"Control Horario" <no-reply@tudominio.com>',
             to: to,
             subject: subject,
             html: html,
+            attachments: nodemailerAttachments
         });
-        console.log(`[SMTP EMAIL] To: ${to} | Subject: ${subject}`);
+        console.log(`[SMTP EMAIL] To: ${to} | Subject: ${subject} | Attachments: ${attachments?.length || 0}`);
         return { success: true };
     } catch (error) {
         console.error('SMTP Error:', error);
