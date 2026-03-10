@@ -91,7 +91,7 @@ export function generatePDF(company: any, employee: any, entries: any[], month: 
         head: [['Fecha', 'Entradas', 'Salidas', 'Horas']],
         body: tableBody,
         theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 1, rowHeight: 4 },
+        styles: { fontSize: 8, cellPadding: 0.5 },
         headStyles: { fillColor: [66, 66, 66], fontSize: 8, fontStyle: 'bold' },
         columnStyles: {
             0: { cellWidth: 25 },
