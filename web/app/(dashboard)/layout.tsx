@@ -81,7 +81,7 @@ export default async function DashboardLayout({
                         <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Servicio Interrumpido</h1>
                         <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-4 leading-relaxed">
                             El acceso de la empresa <span className="text-slate-900">"{company.name}"</span> ha sido desactivado globalmente.
-                            <br />Contacta con el departamento de administración de D105.
+                            <br />Contacta con el departamento de administración.
                         </p>
                         <div className="mt-8">
                             <LogoutButton variant="outline" className="rounded-lg font-black text-[10px] uppercase tracking-widest h-12 px-8" />

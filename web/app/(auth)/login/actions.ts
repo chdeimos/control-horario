@@ -51,7 +51,7 @@ export async function signIn(formData: FormData) {
         // Restricción de acceso para Super Administradores en login normal
         if (profile?.role === 'super_admin') {
             await supabase.auth.signOut()
-            return { error: 'Los administradores de sistema deben acceder por su portal propio. (/d105)' }
+            return { error: 'Error critico, contacte con su administrador.' }
         }
 
         revalidatePath('/fichaje')
@@ -92,7 +92,7 @@ export async function verify2FALogin(userId: string, token: string) {
             .eq('id', userId)
 
         if (profile.role === 'super_admin') {
-            return { error: 'Los administradores de sistema deben acceder por su portal propio. (/d105)' }
+            return { error: 'Error critico, contacte con su administrador.' }
         }
 
         revalidatePath('/fichaje')
