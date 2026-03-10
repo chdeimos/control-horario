@@ -20,9 +20,11 @@ export function SettingsForm({ settings }: { settings: any }) {
         saas_address: settings.saas_address || '',
         saas_email: settings.saas_email || '',
         saas_phone: settings.saas_phone || '',
+        saas_website: settings.saas_website || '',
         saas_logo_large: settings.saas_logo_large || '',
         saas_logo_app: settings.saas_logo_app || '',
         saas_logo_web: settings.saas_logo_web || '',
+        saas_logo_pdf: settings.saas_logo_pdf || '',
         saas_favicon: settings.saas_favicon || '',
         saas_legal_text: settings.saas_legal_text || '',
     })
@@ -107,6 +109,16 @@ export function SettingsForm({ settings }: { settings: any }) {
                                 className="bg-slate-50 border-slate-100 rounded-lg h-14 focus:ring-4 focus:ring-blue-100/50 focus:border-[#3b60c1] transition-all font-bold text-slate-900"
                             />
                         </div>
+                        <div className="space-y-3">
+                            <Label htmlFor="saas_website" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Sitio Web Plataforma</Label>
+                            <Input
+                                id="saas_website"
+                                value={form.saas_website}
+                                onChange={(e) => setForm({ ...form, saas_website: e.target.value })}
+                                placeholder="https://www.tuplataforma.com"
+                                className="bg-slate-50 border-slate-100 rounded-lg h-14 focus:ring-4 focus:ring-blue-100/50 focus:border-[#3b60c1] transition-all font-bold text-slate-900"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -158,6 +170,30 @@ export function SettingsForm({ settings }: { settings: any }) {
                                 label="Logo App (Móvil)"
                                 value={form.saas_logo_app}
                                 onChange={(url) => setForm({ ...form, saas_logo_app: url })}
+                                path="saas/branding"
+                            />
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Sparkles size={14} className="text-slate-400" />
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Favicon</Label>
+                            </div>
+                            <ImageUpload
+                                label="Favicon"
+                                value={form.saas_favicon}
+                                onChange={(url) => setForm({ ...form, saas_favicon: url })}
+                                path="saas/branding"
+                            />
+                        </div>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Globe size={14} className="text-slate-400" />
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Logo PDF / Marca Agua</Label>
+                            </div>
+                            <ImageUpload
+                                label="Logo PDF"
+                                value={form.saas_logo_pdf}
+                                onChange={(url) => setForm({ ...form, saas_logo_pdf: url })}
                                 path="saas/branding"
                             />
                         </div>
