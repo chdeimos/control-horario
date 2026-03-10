@@ -116,11 +116,13 @@ export async function getRegistryData(dateIso: string, departmentId?: string) {
                 prog: scheduledHours,
                 trab: workedHours,
                 dif: workedHours - scheduledHours,
-                schedule: allSchedules?.find(s => s.profile_id === emp.id) ?
+                schedule: sched ?
                     (() => {
-                        const s = allSchedules.find(s => s.profile_id === emp.id)!
-                        let text = `${s.start_time.slice(0, 5)} - ${s.end_time.slice(0, 5)}`
-                        if (s.start_time_2) text += ` / ${s.start_time_2.slice(0, 5)} - ${s.end_time_2?.slice(0, 5)}`
+                        if (emp.schedule_type === 'flexible') {
+                            return `${scheduledHours}h (Flexible)`
+                        }
+                        let text = `${sched.start_time.slice(0, 5)} - ${sched.end_time.slice(0, 5)}`
+                        if (sched.start_time_2) text += ` / ${sched.start_time_2.slice(0, 5)} - ${sched.end_time_2?.slice(0, 5)}`
                         return text
                     })() : 'Sin horario',
                 entries: empEntries
