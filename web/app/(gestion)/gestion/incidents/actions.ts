@@ -36,7 +36,9 @@ export async function getIncidents(params: {
             clock_in,
             clock_out,
             correction_reason,
+            incident_reason,
             is_manual_correction,
+            is_incident,
             updated_at,
             profiles!inner (
                 full_name, 
@@ -45,7 +47,7 @@ export async function getIncidents(params: {
             )
         `, { count: 'exact' })
         .eq('company_id', profile.company_id)
-        .eq('is_manual_correction', true)
+        .or('is_manual_correction.eq.true,is_incident.eq.true')
         .order('updated_at', { ascending: false })
 
     // If manager, filter by department

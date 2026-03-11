@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Search, X, ChevronLeft, ChevronRight, Clock, User, LayoutGrid } from 'lucide-react'
+import { Search, X, ChevronLeft, ChevronRight, Clock, User, LayoutGrid, ShieldAlert, Settings } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -144,10 +145,11 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
                     <TableHeader>
                         <TableRow className="bg-gray-50/50">
                             <TableHead>Empleado</TableHead>
+                            <TableHead>Tipo</TableHead>
                             <TableHead>Fecha Registro</TableHead>
-                            <TableHead>Horario Corregido</TableHead>
-                            <TableHead>Motivo de la Modificación</TableHead>
-                            <TableHead className="text-right">Fecha Cambio</TableHead>
+                            <TableHead>Horario / Estado</TableHead>
+                            <TableHead>Motivo / Observaciones</TableHead>
+                            <TableHead className="text-right">Fecha Auditoría</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -168,17 +170,30 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
                                     </div>
                                 </TableCell>
                                 <TableCell>
+                                    {inc.is_manual_correction ? (
+                                        <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-600 border-blue-200">
+                                            <Settings className="h-2.5 w-2.5 mr-1" /> MANUAL
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-600 border-amber-200">
+                                            <ShieldAlert className="h-2.5 w-2.5 mr-1" /> SISTEMA
+                                        </Badge>
+                                    )}
+                                </TableCell>
+                                <TableCell>
                                     {format(new Date(inc.clock_in), 'dd MMM yyyy', { locale: es })}
                                 </TableCell>
                                 <TableCell>
-                                    <div className="flex items-center gap-1.5 text-xs">
-                                        <Clock className="h-3 w-3 text-gray-400" />
-                                        {format(new Date(inc.clock_in), 'HH:mm')} - {inc.clock_out ? format(new Date(inc.clock_out), 'HH:mm') : '??'}
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-1.5 text-xs font-medium">
+                                            <Clock className="h-3 w-3 text-gray-400" />
+                                            {format(new Date(inc.clock_in), 'HH:mm')} - {inc.clock_out ? format(new Date(inc.clock_out), 'HH:mm') : '--:--'}
+                                        </div>
                                     </div>
                                 </TableCell>
                                 <TableCell className="max-w-md">
                                     <p className="text-sm text-gray-600 italic">
-                                        "{inc.correction_reason}"
+                                        "{inc.correction_reason || inc.incident_reason || 'Sin motivo especificado'}"
                                     </p>
                                 </TableCell>
                                 <TableCell className="text-right text-xs text-muted-foreground">

@@ -227,10 +227,8 @@ export async function checkAndNotifyMissingClocks() {
     const { data: superAdmins } = await supabase.from('profiles').select('email').eq('role', 'super_admin')
     const adminEmail = superAdmins?.[0]?.email
 
-    if (adminEmail) {
-        const reportBody = auditResults.length > 0
-            ? `<p>Resumen de acciones realizadas:</p><ul>${auditResults.map(r => `<li>${r}</li>`).join('')}</ul>`
-            : '<p>No se han detectado incidencias ni se han requerido acciones automáticas en este ciclo.</p>'
+    if (adminEmail && auditResults.length > 0) {
+        const reportBody = `<p>Resumen de acciones realizadas:</p><ul>${auditResults.map(r => `<li>${r}</li>`).join('')}</ul>`
 
         await sendTemplatedEmail(
             adminEmail,
