@@ -76,16 +76,14 @@ export async function inviteEmployee(formData: FormData) {
         if (!adminProfile.department_id) {
             return { error: 'Como manager, debes tener un departamento asignado para invitar empleados.' }
         }
-        // Use declared departmentId above but override if manager
     }
 
-    // PIN Code Validation (exactly 4 digits and unique)
+    // PIN Code Validation
     if (pin && pin.trim().length > 0) {
         if (!/^\d{4}$/.test(pin)) {
             return { error: 'El código PIN debe tener exactamente 4 dígitos numéricos.' }
         }
 
-        // Check uniqueness in the same company
         const { data: existingPin } = await supabase
             .from('profiles')
             .select('id')
@@ -99,10 +97,8 @@ export async function inviteEmployee(formData: FormData) {
     }
 
     const supabaseAdmin = createAdminClient()
-
     const siteUrl = await getSiteUrl()
 
-    // 1. Invite User
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.generateLink({
         type: 'invite',
         email: email,
@@ -117,7 +113,6 @@ export async function inviteEmployee(formData: FormData) {
 
     const newUserId = inviteData.user.id
 
-    // 2. Create Profile
     const { error: profileError } = await supabaseAdmin.from('profiles').insert({
         id: newUserId,
         company_id: adminProfile.company_id,
@@ -152,23 +147,18 @@ export async function updateEmployee(userId: string, formData: FormData) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    // Check Admin
     const { data: adminProfile } = await supabase.from('profiles').select('role, company_id, department_id').eq('id', user!.id).single()
     if (!adminProfile || !['company_admin', 'manager'].includes(adminProfile.role)) {
         return { error: 'No tienes permisos.' }
     }
 
-    // Ensure target user is in same company
     const { data: targetProfile } = await supabase.from('profiles').select('company_id, status, department_id').eq('id', userId).single()
     if (targetProfile?.company_id !== adminProfile.company_id) {
         return { error: 'Usuario no encontrado en tu empresa.' }
     }
 
-    // If manager, check department restriction
-    if (adminProfile.role === 'manager') {
-        if (targetProfile?.department_id !== adminProfile.department_id) {
-            return { error: 'No tienes permisos para editar empleados fuera de tu departamento.' }
-        }
+    if (adminProfile.role === 'manager' && targetProfile?.department_id !== adminProfile.department_id) {
+        return { error: 'No tienes permisos para editar empleados fuera de tu departamento.' }
     }
 
     const fullName = String(formData.get('full_name'))
@@ -182,25 +172,22 @@ export async function updateEmployee(userId: string, formData: FormData) {
     const totalPersonal = parseInt(String(formData.get('total_personal_days'))) || 0
     const scheduledHours = parseFloat(String(formData.get('scheduled_hours'))) || 8.0
     const status = String(formData.get('status'))
+    const scheduleType = String(formData.get('schedule_type')) || 'flexible'
 
-    // If manager, they cannot change the department
     if (adminProfile.role === 'manager') {
         departmentId = adminProfile.department_id
     }
 
-    // PIN Code Validation (exactly 4 digits and unique)
     if (pin && pin.trim().length > 0) {
         if (!/^\d{4}$/.test(pin)) {
             return { error: 'El código PIN debe tener exactamente 4 dígitos numéricos.' }
         }
-
-        // Check uniqueness in the same company
         const { data: existingPin } = await supabase
             .from('profiles')
             .select('id')
             .eq('company_id', adminProfile.company_id)
             .eq('pin_code', pin)
-            .neq('id', userId) // Exclude current user
+            .neq('id', userId)
             .maybeSingle()
 
         if (existingPin) {
@@ -208,7 +195,6 @@ export async function updateEmployee(userId: string, formData: FormData) {
         }
     }
 
-    // Check Plan Limit if changing status to active
     if (status === 'active' && targetProfile?.status !== 'active') {
         const limitCheck = await checkPlanLimit(adminProfile.company_id)
         if (limitCheck.limited) {
@@ -217,7 +203,6 @@ export async function updateEmployee(userId: string, formData: FormData) {
     }
 
     const supabaseAdmin = createAdminClient()
-
     const { error } = await supabaseAdmin.from('profiles').update({
         full_name: fullName,
         role: role,
@@ -230,7 +215,7 @@ export async function updateEmployee(userId: string, formData: FormData) {
         total_personal_days: totalPersonal,
         scheduled_hours: scheduledHours,
         status: status as any,
-        schedule_type: String(formData.get('schedule_type')) || 'flexible'
+        schedule_type: scheduleType
     }).eq('id', userId)
 
     if (error) return { error: error.message }
@@ -251,7 +236,7 @@ export async function getEmployeeSchedules(userId: string) {
     return { data }
 }
 
-export async function updateEmployeeSchedules(userId: string, schedules: any[]) {
+export async function updateEmployeeSchedules(userId: string, schedules: any[], scheduleType: string = 'fixed') {
     const supabase = await createClient()
 
     // 1. Delete existing
@@ -259,17 +244,17 @@ export async function updateEmployeeSchedules(userId: string, schedules: any[]) 
 
     // 2. Insert new ones
     if (schedules.length > 0) {
+        const isFlex = scheduleType === 'flexible'
         const cleanSchedules = schedules.map(s => {
-            // Helper to clean time strings (ensure empty is null)
             const cleanTime = (t: any) => (t && String(t).trim().length > 0) ? t : null
 
             return {
                 profile_id: userId,
                 day_of_week: Number(s.day_of_week),
-                start_time: s.start_time || '09:00',
-                end_time: s.end_time || '18:00',
-                start_time_2: cleanTime(s.start_time_2),
-                end_time_2: cleanTime(s.end_time_2),
+                start_time: isFlex ? null : (s.start_time || '09:00'),
+                end_time: isFlex ? null : (s.end_time || '18:00'),
+                start_time_2: isFlex ? null : cleanTime(s.start_time_2),
+                end_time_2: isFlex ? null : cleanTime(s.end_time_2),
                 target_total_hours: s.target_total_hours || 8.0,
                 is_active: s.is_active ?? s.active ?? true
             }
@@ -289,22 +274,18 @@ export async function toggleEmployeeStatus(userId: string) {
 
     if (!user) return { error: 'No autenticado.' }
 
-    // Check Admin
     const { data: adminProfile } = await supabase.from('profiles').select('role, company_id, department_id').eq('id', user.id).single()
     if (!adminProfile || !['company_admin', 'manager'].includes(adminProfile.role)) {
         return { error: 'No tienes permisos.' }
     }
 
-    // Ensure target user is in same company
     const { data: targetProfile } = await supabase.from('profiles').select('company_id, status, department_id').eq('id', userId).single()
     if (!targetProfile || targetProfile.company_id !== adminProfile.company_id) {
         return { error: 'Usuario no encontrado en tu empresa.' }
     }
 
-    // Toggle logic: active <-> terminated (Baja)
     const newStatus = targetProfile.status === 'active' ? 'terminated' : 'active'
 
-    // Check plan limits if activating
     if (newStatus === 'active') {
         const limitCheck = await checkPlanLimit(adminProfile.company_id)
         if (limitCheck.limited) {
@@ -320,4 +301,3 @@ export async function toggleEmployeeStatus(userId: string) {
     revalidatePath('/gestion/empleados')
     return { success: true, newStatus }
 }
-

@@ -185,7 +185,7 @@ export function EditEmployeeDialog({
             if (res.error) throw new Error(res.error)
 
             // 2. Update Schedules (only if type is fixed, but we sync anyway)
-            const resSchedules = await updateEmployeeSchedules(employee.id, schedules)
+            const resSchedules = await updateEmployeeSchedules(employee.id, schedules, scheduleType)
             if (resSchedules.error) throw new Error(resSchedules.error)
 
             toast.success('Empleado y horario actualizados')
