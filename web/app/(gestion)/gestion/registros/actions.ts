@@ -137,6 +137,7 @@ export async function getRegistryData(dateIso: string, departmentId?: string) {
                 if (currentSecs > (startSecs + margin * 60)) {
                     empEntries.push({
                         id: 'virtual-late',
+                        user_id: emp.id,
                         clock_in: `${dateIso}T${sched.start_time}`,
                         clock_out: `${dateIso}T${sched.start_time}`,
                         is_incident: true,
@@ -169,6 +170,7 @@ export async function getRegistryData(dateIso: string, departmentId?: string) {
                     .filter(en => en.incident_reason !== 'Incidencia: Fichaje realizado en día sin horario asignado')
                     .map(en => ({
                         id: en.id,
+                        user_id: en.user_id,
                         start: en.clock_in,
                         end: en.clock_out,
                         type: en.entry_type,
@@ -197,37 +199,54 @@ export async function updateTimeEntry(entryId: string, formData: FormData) {
         return { error: 'No tienes permisos para modificar registros.' }
     }
 
-    // Get entry to check company
-    const { data: entry } = await supabase.from('time_entries').select('company_id, user_id').eq('id', entryId).single()
-    if (!entry || entry.company_id !== profile.company_id) {
-        return { error: 'Registro no encontrado.' }
-    }
-
-    // If manager, check department of the owner of the entry
-    if (profile.role === 'manager') {
-        const { data: targetProfile } = await supabase.from('profiles').select('department_id').eq('id', entry.user_id).single()
-        if (targetProfile?.department_id !== profile.department_id) {
-            return { error: 'No puedes editar registros de otros departamentos.' }
-        }
-    }
-
     const clockIn = String(formData.get('clock_in'))
     const clockOut = String(formData.get('clock_out')) || null
     const reason = String(formData.get('correction_reason'))
+    const userId = formData.get('user_id') ? String(formData.get('user_id')) : null
 
     if (!reason || reason.trim().length < 5) {
         return { error: 'Debes proporcionar un motivo válido para la modificación (mín. 5 caracteres).' }
     }
 
-    const { error } = await supabase.from('time_entries').update({
-        clock_in: clockIn,
-        clock_out: clockOut,
-        is_manual_correction: true,
-        correction_reason: reason,
-        updated_at: new Date().toISOString()
-    }).eq('id', entryId)
+    if (entryId === 'virtual-late') {
+        if (!userId) return { error: 'ID de empleado no proporcionado.' }
+        
+        const { error } = await supabase.from('time_entries').insert({
+            user_id: userId,
+            company_id: profile.company_id,
+            clock_in: clockIn,
+            clock_out: clockOut,
+            entry_type: 'work',
+            is_manual_correction: true,
+            correction_reason: reason,
+            is_incident: false // Al corregirlo manualmente, deja de ser una ausencia no justificada
+        })
+        if (error) return { error: error.message }
+    } else {
+        // Get entry to check company
+        const { data: entry } = await supabase.from('time_entries').select('company_id, user_id').eq('id', entryId).single()
+        if (!entry || entry.company_id !== profile.company_id) {
+            return { error: 'Registro no encontrado.' }
+        }
 
-    if (error) return { error: error.message }
+        // If manager, check department of the owner of the entry
+        if (profile.role === 'manager') {
+            const { data: targetProfile } = await supabase.from('profiles').select('department_id').eq('id', entry.user_id).single()
+            if (targetProfile?.department_id !== profile.department_id) {
+                return { error: 'No puedes editar registros de otros departamentos.' }
+            }
+        }
+
+        const { error } = await supabase.from('time_entries').update({
+            clock_in: clockIn,
+            clock_out: clockOut,
+            is_manual_correction: true,
+            correction_reason: reason,
+            updated_at: new Date().toISOString()
+        }).eq('id', entryId)
+
+        if (error) return { error: error.message }
+    }
 
     return { success: true }
 }

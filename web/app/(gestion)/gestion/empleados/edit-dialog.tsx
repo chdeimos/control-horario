@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
@@ -206,6 +207,9 @@ export function EditEmployeeDialog({
                             <div className="w-1.5 h-6 bg-[#3b60c1] rounded-full"></div>
                             <DialogTitle className="text-2xl font-bold text-slate-900 tracking-tight text-left">Ficha de Empleado</DialogTitle>
                         </div>
+                        <DialogDescription className="sr-only">
+                            Formulario para editar los datos personales, laborales y permisos del empleado.
+                        </DialogDescription>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-4">{employee.email}</p>
                     </DialogHeader>
 

@@ -44,6 +44,20 @@ export function EditEntryDialog({ entry, employeeName, scheduledHours, open, onO
         setLoading(true)
 
         const formData = new FormData(event.currentTarget)
+        
+        // Convert input local times to ISO strings to avoid timezone shifts in the server
+        const cin = formData.get('clock_in')
+        const cout = formData.get('clock_out')
+
+        if (cin) {
+            const dateIn = new Date(String(cin))
+            formData.set('clock_in', dateIn.toISOString())
+        }
+        if (cout) {
+            const dateOut = new Date(String(cout))
+            formData.set('clock_out', dateOut.toISOString())
+        }
+
         const res = await updateTimeEntry(entry.id, formData)
 
         setLoading(false)
@@ -64,6 +78,9 @@ export function EditEntryDialog({ entry, employeeName, scheduledHours, open, onO
                         <div className="w-1.5 h-6 bg-[#3b60c1] rounded-lg"></div>
                         <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight text-left">Modificar Fichaje</DialogTitle>
                     </div>
+                    <DialogDescription className="sr-only">
+                        Formulario para corregir o materializar manualmente un registro de jornada.
+                    </DialogDescription>
                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] ml-4 flex items-center gap-2">
                         <History className="h-3 w-3" /> Incidencia Manual
                     </p>
@@ -86,6 +103,7 @@ export function EditEntryDialog({ entry, employeeName, scheduledHours, open, onO
 
                 <form onSubmit={handleSubmit} className="p-8 space-y-6">
                     <div className="grid grid-cols-2 gap-6">
+                        <input type="hidden" name="user_id" value={entry.user_id || ''} />
                         <div className="space-y-3">
                             <Label htmlFor="clock_in" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Entrada</Label>
                             <Input
