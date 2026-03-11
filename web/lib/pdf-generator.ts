@@ -42,7 +42,12 @@ export function generatePDF(
     doc.text(`${month}/${year}`, 178, 24)
 
     // Process Entries
-    const dailyRecords: Record<string, { start: string, end: string, total: number, expected: number, note: string }> = {}
+    const dailyRecords: Record<string, { 
+        slots: { in: string, out: string, mod: string }[], 
+        total: number, 
+        expected: number, 
+        note: string 
+    }> = {}
     const daysInMonth = new Date(year, month, 0).getDate()
 
     for (let i = 1; i <= daysInMonth; i++) {
@@ -81,16 +86,16 @@ export function generatePDF(
 
         if (leave) {
             const typeLabels: Record<string, string> = {
-                'vacation': 'Vacaciones',
-                'sick_leave': 'Baja Médica',
-                'personal_days': 'Asuntos Propios',
-                'other': 'Ausencia Justificada'
+                'vacation': 'VACACIONES',
+                'sick_leave': 'BAJA MÉDICA',
+                'personal_days': 'ASUNTOS PROPIOS',
+                'other': 'AUSENCIA JUSTIF.'
             }
-            note = typeLabels[leave.type] || 'Ausencia'
-            expected = 0 // If on leave, expected is 0 for the report balance
+            note = typeLabels[leave.type] || 'AUSENCIA'
+            expected = 0
         }
 
-        dailyRecords[dateStr] = { start: '', end: '', total: 0, expected, note }
+        dailyRecords[dateStr] = { slots: [], total: 0, expected, note }
     }
 
     let totalMonthlyWorked = 0
@@ -102,14 +107,9 @@ export function generatePDF(
 
         const inTime = new Date(entry.clock_in).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
         const outTime = entry.clock_out ? new Date(entry.clock_out).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''
-
         const modTag = entry.is_manual_correction ? '*' : ''
 
-        const currentStart = dailyRecords[dateStr].start
-        const currentEnd = dailyRecords[dateStr].end
-
-        dailyRecords[dateStr].start = currentStart ? `${currentStart}, ${inTime}${modTag}` : `${inTime}${modTag}`
-        dailyRecords[dateStr].end = currentEnd ? `${currentEnd}, ${outTime}` : outTime
+        dailyRecords[dateStr].slots.push({ in: inTime, out: outTime, mod: modTag })
 
         if (entry.clock_out) {
             const diff = (new Date(entry.clock_out).getTime() - new Date(entry.clock_in).getTime()) / (1000 * 60 * 60)
@@ -134,40 +134,63 @@ export function generatePDF(
         let workedDisplay = formatDuration(rec.total)
         let diffDisplay = formatDuration(diff)
 
-        if (!rec.start && rec.note) workedDisplay = rec.note
+        if (rec.slots.length === 0 && rec.note) workedDisplay = rec.note
         if (rec.expected > 0) totalMonthlyExpected += rec.expected
 
-        return [
+        const row: any[] = [
             format(new Date(date), 'dd/MM/yyyy'),
             rec.expected > 0 ? formatDuration(rec.expected) : '-',
-            rec.start || '-',
-            rec.end || '-',
-            workedDisplay,
             diffDisplay
         ]
+
+        // Add 3 pairs of in/out
+        for (let j = 0; j < 3; j++) {
+            const slot = rec.slots[j]
+            row.push(slot ? `${slot.in}${slot.mod}` : '-')
+            row.push(slot ? slot.out || '-' : '-')
+        }
+
+        // Add "Otras" column
+        if (rec.slots.length > 3) {
+            const others = rec.slots.slice(3).map(s => `${s.in}${s.mod}-${s.out || '?'}`).join(', ')
+            row.push(others)
+        } else {
+            row.push('-')
+        }
+
+        row.push(workedDisplay)
+
+        return row
     })
 
     const totalDiff = totalMonthlyWorked - totalMonthlyExpected
-    tableBody.push(['TOTAL MENSUAL', formatDuration(totalMonthlyExpected), '', '', formatDuration(totalMonthlyWorked), formatDuration(totalDiff)])
+    tableBody.push(['TOTAL MENSUAL', formatDuration(totalMonthlyExpected), formatDuration(totalDiff), '', '', '', '', '', '', '', formatDuration(totalMonthlyWorked)])
 
     autoTable(doc, {
         startY: 30,
-        head: [['Fecha', 'Prevista', 'Entradas', 'Salidas', 'Trabaj.', 'Dif.']],
+        head: [['Fecha', 'Prev.', 'Dif.', 'E1', 'S1', 'E2', 'S2', 'E3', 'S3', 'Otras', 'Trab.']],
         body: tableBody,
         theme: 'grid',
-        styles: { fontSize: 7, cellPadding: 0.5 },
-        headStyles: { fillColor: [66, 66, 66], fontSize: 7, fontStyle: 'bold' },
+        styles: { fontSize: 6.5, cellPadding: 0.5 },
+        headStyles: { fillColor: [66, 66, 66], fontSize: 6.5, fontStyle: 'bold', halign: 'center' },
         columnStyles: {
-            0: { cellWidth: 20 },
-            1: { cellWidth: 15, halign: 'center' },
-            4: { cellWidth: 15, halign: 'right' },
-            5: { cellWidth: 15, halign: 'right' }
+            0: { cellWidth: 16 },
+            1: { cellWidth: 11, halign: 'center' },
+            2: { cellWidth: 11, halign: 'center' },
+            3: { cellWidth: 10, halign: 'center' },
+            4: { cellWidth: 10, halign: 'center' },
+            5: { cellWidth: 10, halign: 'center' },
+            6: { cellWidth: 10, halign: 'center' },
+            7: { cellWidth: 10, halign: 'center' },
+            8: { cellWidth: 10, halign: 'center' },
+            9: { cellWidth: 'auto', fontSize: 5 },
+            10: { cellWidth: 12, halign: 'right' }
         },
-        margin: { left: 14, right: 14 },
+        margin: { left: 10, right: 10 },
         didParseCell: function (data) {
             if (data.section === 'body') {
-                // Highlight negative differences in red
-                if (data.column.index === 5) {
+                // Highlight negative differences in red (Index 2 now)
+                if (data.column.index === 2) {
                     const val = data.cell.text[0]
                     if (val && val.startsWith('-') && val !== '00:00') {
                         data.cell.styles.textColor = [220, 38, 38] // Red
@@ -178,6 +201,15 @@ export function generatePDF(
                 if (data.row.index === tableBody.length - 1) {
                     data.cell.styles.fillColor = [245, 245, 245]
                     data.cell.styles.fontStyle = 'bold'
+                }
+                // Highlight note in Worked column if it's an absence
+                if (data.column.index === 10) {
+                    const val = data.cell.text[0]
+                    if (val && ['VACACIONES', 'BAJA MÉDICA', 'ASUNTOS PROPIOS', 'AUSENCIA JUSTIF.'].includes(val)) {
+                        data.cell.styles.textColor = [59, 130, 246] // Blue
+                        data.cell.styles.fontSize = 5.5
+                        data.cell.styles.fontStyle = 'bold'
+                    }
                 }
             }
         }
