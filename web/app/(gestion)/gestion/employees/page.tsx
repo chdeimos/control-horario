@@ -35,17 +35,22 @@ export default async function EmployeesPage({
     const to = from + pageSize - 1
 
     const adminSupabase = createAdminClient()
-    const { data: { users: authUsers } } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 })
+    const { data: usersData, error: authError } = await adminSupabase.auth.admin.listUsers({ perPage: 1000 })
+    const authUsers = usersData?.users || []
+
+    if (authError) {
+        console.error('Error fetching auth users:', authError)
+    }
 
     // Build the query
     let employeesQuery = supabase
         .from('profiles')
-        .select('*, departments(name)', { count: 'exact' })
-        .eq('company_id', profile.company_id)
+        .select('*, departments:department_id(name)', { count: 'exact' })
+        .eq('company_id', profile?.company_id)
         .order('full_name')
 
     // Role filtering
-    if (profile.role === 'manager' && profile.department_id) {
+    if (profile?.role === 'manager' && profile?.department_id) {
         employeesQuery = employeesQuery.eq('department_id', profile.department_id)
     }
 
@@ -64,18 +69,28 @@ export default async function EmployeesPage({
         employeesQuery = employeesQuery.range(from, to)
     }
 
-    const { data: dbProfiles, count } = await employeesQuery
+    const { data: dbProfiles, count, error: dbError } = await employeesQuery
+
+    if (dbError) {
+        console.error('Error fetching profiles:', dbError)
+        return (
+            <div className="p-8 text-center bg-white rounded-lg border border-red-200">
+                <h2 className="text-xl font-bold text-red-600">Error de Base de Datos</h2>
+                <p className="text-muted-foreground">{dbError.message}</p>
+            </div>
+        )
+    }
 
     const { data: departments } = await supabase
         .from('departments')
         .select('*')
-        .eq('company_id', profile.company_id)
+        .eq('company_id', profile?.company_id)
         .order('name')
 
     const { data: company } = await supabase
         .from('companies')
         .select('settings')
-        .eq('id', profile.company_id)
+        .eq('id', profile?.company_id)
         .single()
 
     // Merge
