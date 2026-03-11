@@ -54,7 +54,6 @@ export async function checkAndNotifyMissingClocks() {
         `)
         .in('schedule_type', ['fixed', 'flexible']) // Include both types
         .eq('status', 'active')
-        .not('email', 'is', null)
 
     if (!profiles) return
 
@@ -105,6 +104,10 @@ export async function checkAndNotifyMissingClocks() {
     }
 
     for (const profile of profiles) {
+        if (!profile.email) {
+            auditResults.push(`⚠️ El perfil <b>${profile.full_name}</b> no tiene email configurado. No se pueden enviar avisos.`);
+            continue
+        }
         const companySettings = (profile.companies as any)?.settings || {}
 
         // 1. Margen para detectar incidencia (Ej: 30 min por defecto)

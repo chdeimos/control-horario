@@ -163,6 +163,7 @@ export function EditEmployeeDialog({ employee, departments, open, onOpenChange }
                         <div className="p-6 max-h-[60vh] overflow-y-auto">
                             <TabsContent value="general" className="mt-0 space-y-4 hidden data-[state=active]:block" forceMount>
                                 <div className="grid gap-2">
+                                    <input type="hidden" name="email" defaultValue={employee.email} />
                                     <Label htmlFor="full_name" className={errors.full_name ? "text-red-500" : ""}>Nombre Completo *</Label>
                                     <Input
                                         id="full_name" name="full_name"

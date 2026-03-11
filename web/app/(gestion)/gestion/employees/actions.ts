@@ -96,6 +96,7 @@ export async function inviteEmployee(formData: FormData) {
     // 2. Create Profile
     const { error: profileError } = await supabaseAdmin.from('profiles').insert({
         id: newUserId,
+        email: email,
         company_id: adminProfile.company_id,
         role: role,
         full_name: fullName,
@@ -156,6 +157,7 @@ export async function updateEmployee(userId: string, formData: FormData) {
     const totalVacation = parseInt(String(formData.get('total_vacation_days'))) || 22
     const totalPersonal = parseInt(String(formData.get('total_personal_days'))) || 0
     const scheduledHours = parseFloat(String(formData.get('scheduled_hours'))) || 8.0
+    const email = String(formData.get('email') || '')
     const status = String(formData.get('status'))
 
     // If manager, they cannot change the department
@@ -175,6 +177,7 @@ export async function updateEmployee(userId: string, formData: FormData) {
 
     const { error } = await supabaseAdmin.from('profiles').update({
         full_name: fullName,
+        email: email || undefined,
         role: role,
         nif: nif,
         phone: phone,
