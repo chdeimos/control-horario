@@ -19,7 +19,7 @@ export async function getMonthlyReportData(userId: string, month: number, year: 
     // Get Employee & Company Info
     const { data: employeeData, error: empError } = await supabase
         .from('profiles')
-        .select('full_name, nif, company_id, department_id')
+        .select('full_name, nif, company_id, department_id, schedule_type, scheduled_hours')
         .eq('id', userId)
         .single()
 
@@ -54,10 +54,28 @@ export async function getMonthlyReportData(userId: string, month: number, year: 
 
     if (entriesError) return { error: entriesError.message }
 
+    // Get Work Schedules
+    const { data: schedules } = await supabase
+        .from('work_schedules')
+        .select('*')
+        .eq('profile_id', userId)
+        .eq('is_active', true)
+
+    // Get Time Off Requests
+    const { data: timeOff } = await supabase
+        .from('time_off_requests')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'approved')
+        .lte('start_date', endDate.split('T')[0])
+        .gte('end_date', startDate.split('T')[0])
+
     return {
         employee: employeeData,
         company: companyData,
-        entries: entries || []
+        entries: entries || [],
+        schedules: schedules || [],
+        timeOff: timeOff || []
     }
 }
 

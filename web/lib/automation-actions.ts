@@ -57,7 +57,7 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
             // 2. Get all active employees for the company
             const { data: employees, error: empError } = await supabase
                 .from('profiles')
-                .select('id, full_name, nif')
+                .select('id, full_name, nif, schedule_type, scheduled_hours')
                 .eq('company_id', company.id)
                 .eq('status', 'active')
 
@@ -67,6 +67,24 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
                 continue
             }
 
+            const startDate = new Date(year, month - 1, 1).toISOString()
+            const endDate = new Date(year, month, 0, 23, 59, 59).toISOString()
+
+            // Pre-fetch all schedules and time off for the company to be efficient
+            const { data: allSchedules } = await supabase
+                .from('work_schedules')
+                .select('*')
+                .in('profile_id', employees.map(e => e.id))
+                .eq('is_active', true)
+
+            const { data: allTimeOff } = await supabase
+                .from('time_off_requests')
+                .select('*')
+                .in('user_id', employees.map(e => e.id))
+                .eq('status', 'approved')
+                .lte('start_date', endDate.split('T')[0])
+                .gte('end_date', startDate.split('T')[0])
+
             const zip = new JSZip()
             const folderName = `Informes_${year}_${month}`
             const folder = zip.folder(folderName)
@@ -74,10 +92,6 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
             let pdfCount = 0
 
             for (const employee of employees) {
-                // Get Time Entries for the month
-                const startDate = new Date(year, month - 1, 1).toISOString()
-                const endDate = new Date(year, month, 0, 23, 59, 59).toISOString()
-
                 const { data: entries, error: entriesError } = await supabase
                     .from('time_entries')
                     .select('*')
@@ -93,8 +107,11 @@ export async function processMonthlyReports(manualTarget?: { month: number, year
 
                 if (!entries || entries.length === 0) continue
 
+                const empSchedules = allSchedules?.filter(s => s.profile_id === employee.id) || []
+                const empTimeOff = allTimeOff?.filter(t => t.user_id === employee.id) || []
+
                 // Generate PDF with Branding
-                const doc = generatePDF(company, employee, entries, month, year, platformSettings)
+                const doc = generatePDF(company, employee, entries, month, year, platformSettings, empSchedules, empTimeOff)
                 const pdfArrayBuffer = doc.output('arraybuffer')
 
                 const filename = `Registro_${employee.full_name.replace(/[^a-z0-9]/gi, '_')}_${month}_${year}.pdf`

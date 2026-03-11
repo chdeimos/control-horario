@@ -2,7 +2,16 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
 
-export function generatePDF(company: any, employee: any, entries: any[], month: number, year: number, branding?: any): jsPDF {
+export function generatePDF(
+    company: any, 
+    employee: any, 
+    entries: any[], 
+    month: number, 
+    year: number, 
+    branding?: any, 
+    schedules: any[] = [], 
+    timeOff: any[] = []
+): jsPDF {
     const doc = new jsPDF()
 
     // Header Compacto
@@ -33,15 +42,59 @@ export function generatePDF(company: any, employee: any, entries: any[], month: 
     doc.text(`${month}/${year}`, 178, 24)
 
     // Process Entries
-    const dailyRecords: Record<string, { start: string, end: string, total: number }> = {}
+    const dailyRecords: Record<string, { start: string, end: string, total: number, expected: number, note: string }> = {}
     const daysInMonth = new Date(year, month, 0).getDate()
 
     for (let i = 1; i <= daysInMonth; i++) {
+        const d = new Date(year, month - 1, i)
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`
-        dailyRecords[dateStr] = { start: '', end: '', total: 0 }
+        
+        // Calculate Expected Hours
+        const dayOfWeek = d.getDay() === 0 ? 7 : d.getDay()
+        const schedule = schedules.find(s => s.day_of_week === dayOfWeek)
+        
+        let expected = 0
+        if (schedule && schedule.is_active) {
+            if (employee.schedule_type === 'fixed' && schedule.start_time && schedule.end_time) {
+                const timeToHours = (t: string) => {
+                    const [h, m] = t.split(':').map(Number)
+                    return h + (m || 0) / 60
+                }
+                expected = timeToHours(schedule.end_time) - timeToHours(schedule.start_time)
+                if (schedule.start_time_2 && schedule.end_time_2) {
+                    expected += timeToHours(schedule.end_time_2) - timeToHours(schedule.start_time_2)
+                }
+                if (expected <= 0) expected = schedule.target_total_hours || Number(employee.scheduled_hours) || 8.0
+            } else {
+                expected = schedule.target_total_hours || Number(employee.scheduled_hours) || 8.0
+            }
+        }
+
+        // Check for Absence / Time Off
+        let note = ''
+        const leave = timeOff.find(t => {
+            const start = new Date(t.start_date)
+            const end = new Date(t.end_date)
+            const current = new Date(dateStr)
+            return current >= start && current <= end
+        })
+
+        if (leave) {
+            const typeLabels: Record<string, string> = {
+                'vacation': 'Vacaciones',
+                'sick_leave': 'Baja Médica',
+                'personal_days': 'Asuntos Propios',
+                'other': 'Ausencia Justificada'
+            }
+            note = typeLabels[leave.type] || 'Ausencia'
+            expected = 0 // If on leave, expected is 0 for the report balance
+        }
+
+        dailyRecords[dateStr] = { start: '', end: '', total: 0, expected, note }
     }
 
-    let totalMonthlyHours = 0
+    let totalMonthlyWorked = 0
+    let totalMonthlyExpected = 0
 
     entries.forEach((entry: any) => {
         const dateStr = entry.clock_in.split('T')[0]
@@ -61,12 +114,12 @@ export function generatePDF(company: any, employee: any, entries: any[], month: 
         if (entry.clock_out) {
             const diff = (new Date(entry.clock_out).getTime() - new Date(entry.clock_in).getTime()) / (1000 * 60 * 60)
             dailyRecords[dateStr].total += diff
-            totalMonthlyHours += diff
+            totalMonthlyWorked += diff
         }
     })
 
     function formatDuration(totalHours: number) {
-        if (!totalHours) return '-'
+        if (totalHours === 0) return '00:00'
         const sign = totalHours < 0 ? "-" : ""
         const absHours = Math.abs(totalHours)
         const h = Math.floor(absHours)
@@ -76,28 +129,58 @@ export function generatePDF(company: any, employee: any, entries: any[], month: 
 
     const tableBody = Object.keys(dailyRecords).map(date => {
         const rec = dailyRecords[date]
+        const diff = rec.total - rec.expected
+        
+        let workedDisplay = formatDuration(rec.total)
+        let diffDisplay = formatDuration(diff)
+
+        if (!rec.start && rec.note) workedDisplay = rec.note
+        if (rec.expected > 0) totalMonthlyExpected += rec.expected
+
         return [
             format(new Date(date), 'dd/MM/yyyy'),
+            rec.expected > 0 ? formatDuration(rec.expected) : '-',
             rec.start || '-',
             rec.end || '-',
-            formatDuration(rec.total)
+            workedDisplay,
+            diffDisplay
         ]
     })
 
-    tableBody.push(['TOTAL MENSUAL', '', '', formatDuration(totalMonthlyHours)])
+    const totalDiff = totalMonthlyWorked - totalMonthlyExpected
+    tableBody.push(['TOTAL MENSUAL', formatDuration(totalMonthlyExpected), '', '', formatDuration(totalMonthlyWorked), formatDuration(totalDiff)])
 
     autoTable(doc, {
         startY: 30,
-        head: [['Fecha', 'Entradas', 'Salidas', 'Horas']],
+        head: [['Fecha', 'Prevista', 'Entradas', 'Salidas', 'Trabaj.', 'Dif.']],
         body: tableBody,
         theme: 'grid',
-        styles: { fontSize: 8, cellPadding: 0.5 },
-        headStyles: { fillColor: [66, 66, 66], fontSize: 8, fontStyle: 'bold' },
+        styles: { fontSize: 7, cellPadding: 0.5 },
+        headStyles: { fillColor: [66, 66, 66], fontSize: 7, fontStyle: 'bold' },
         columnStyles: {
-            0: { cellWidth: 25 },
-            3: { cellWidth: 20, halign: 'right' }
+            0: { cellWidth: 20 },
+            1: { cellWidth: 15, halign: 'center' },
+            4: { cellWidth: 15, halign: 'right' },
+            5: { cellWidth: 15, halign: 'right' }
         },
-        margin: { left: 14, right: 14 }
+        margin: { left: 14, right: 14 },
+        didParseCell: function (data) {
+            if (data.section === 'body') {
+                // Highlight negative differences in red
+                if (data.column.index === 5) {
+                    const val = data.cell.text[0]
+                    if (val && val.startsWith('-') && val !== '00:00') {
+                        data.cell.styles.textColor = [220, 38, 38] // Red
+                        data.cell.styles.fontStyle = 'bold'
+                    }
+                }
+                // Highlight Total Row
+                if (data.row.index === tableBody.length - 1) {
+                    data.cell.styles.fillColor = [245, 245, 245]
+                    data.cell.styles.fontStyle = 'bold'
+                }
+            }
+        }
     })
 
     const incidents = entries.filter(e => e.is_manual_correction)

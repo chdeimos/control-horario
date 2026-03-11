@@ -124,7 +124,7 @@ export function ReportGenerator({
                     folder?.file(`ERROR_${empName}.txt`, `Error: ${res.error}`)
                 } else {
                     // Generate PDF using shared generator
-                    const doc = generatePDF(res.company, res.employee, res.entries || [], month, year, branding)
+                    const doc = generatePDF(res.company, res.employee, res.entries || [], month, year, branding, res.schedules, res.timeOff)
                     const pdfBlob = doc.output('blob')
                     const filename = `Registro_${empName.replace(/[^a-z0-9]/gi, '_')}_${month}_${year}.pdf`
                     folder?.file(filename, pdfBlob)
