@@ -100,6 +100,20 @@ export async function getIncidents(params: {
 
     if (error) return { error: error.message }
 
+    // Normalizar datos para aplanar joins que Supabase puede devolver como arrays
+    const cleanedIncidents = (incidents || []).map((inc: any) => {
+        const profile = Array.isArray(inc.profiles) ? inc.profiles[0] : inc.profiles
+        if (!profile) return inc
+
+        return {
+            ...inc,
+            profiles: {
+                ...profile,
+                departments: Array.isArray(profile.departments) ? profile.departments[0] : profile.departments
+            }
+        }
+    })
+
     // Global count of pending incidents for the header flashcard
     let pendingQuery = supabase
         .from('time_entries')
@@ -109,7 +123,6 @@ export async function getIncidents(params: {
         .eq('is_audited', false)
 
     if (profile.role === 'manager') {
-        // We need to filter by department for managers
         const { data: deptProfiles } = await supabase
             .from('profiles')
             .select('id')
@@ -122,7 +135,7 @@ export async function getIncidents(params: {
     const { count: pendingCount } = await pendingQuery
 
     return {
-        incidents: incidents || [],
+        incidents: cleanedIncidents as any[],
         count: count || 0,
         pendingCount: pendingCount || 0
     }

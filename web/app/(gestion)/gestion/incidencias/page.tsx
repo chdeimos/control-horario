@@ -73,7 +73,7 @@ export default async function IncidentsPage({
             <div className="max-w-7xl mx-auto px-10 -mt-12 relative z-20 space-y-12 pb-20">
 
                 <IncidentsTable
-                    initialIncidents={incidents}
+                    initialIncidents={incidents as any}
                     totalCount={count}
                     departments={departments || []}
                 />
