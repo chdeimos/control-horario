@@ -184,7 +184,7 @@ export function generatePDF(
             7: { cellWidth: 10, halign: 'center' },
             8: { cellWidth: 10, halign: 'center' },
             9: { cellWidth: 'auto', fontSize: 5 },
-            10: { cellWidth: 12, halign: 'right' }
+            10: { cellWidth: 24, halign: 'center' }
         },
         margin: { left: 10, right: 10 },
         didParseCell: function (data) {
