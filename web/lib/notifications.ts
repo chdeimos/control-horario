@@ -37,8 +37,13 @@ export async function checkAndNotifyMissingClocks() {
     // Robust Madrid Date calculation for queries
     const madridDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' })
     const todayStr = madridDateFormatter.format(now)
+    const yesterday = new Date(now.getTime() - 86400000)
+    const yesterdayStr = madridDateFormatter.format(yesterday)
+
     const startOfMadridToday = `${todayStr}T00:00:00+01:00`
     const endOfMadridToday = `${todayStr}T23:59:59+01:00`
+    const startOfMadridYesterday = `${yesterdayStr}T00:00:00+01:00`
+    const endOfMadridYesterday = `${yesterdayStr}T23:59:59+01:00`
 
     // 1. Get all active profiles with assigned schedules and their company settings
     const { data: profiles } = await supabase
@@ -58,7 +63,6 @@ export async function checkAndNotifyMissingClocks() {
     if (!profiles) return
 
     // --- 0. CLEANUP: Forgotten clocks from PREVIOUS days ---
-    const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().split('T')[0]
     const { data: forgottenEntries } = await supabase
         .from('time_entries')
         .select('id, clock_in, profiles(id, full_name, email)')
@@ -83,7 +87,8 @@ export async function checkAndNotifyMissingClocks() {
                 .update({
                     clock_out: autoOutDate.toISOString(),
                     is_incident: true,
-                    incident_reason: 'Incidencia: Fichaje olvidado de día anterior. Cierre automático de seguridad.'
+                    incident_reason: 'Incidencia: Fichaje olvidado de día anterior. Cierre automático de seguridad.',
+                    updated_at: now.toISOString()
                 })
                 .eq('id', entry.id)
 
@@ -209,7 +214,7 @@ export async function checkAndNotifyMissingClocks() {
             )
         }
 
-        // End of day audit (For BOTH types)
+        // End of day audit (Current Day)
         await processDailyAbsenceCheck(
             supabase,
             profile,
@@ -221,6 +226,24 @@ export async function checkAndNotifyMissingClocks() {
             startOfMadridToday,
             endOfMadridToday
         )
+
+        // Recovery audit (Yesterday) to ensure no absences were missed due to midnight crossing
+        const yesterdayDayOfWeekRaw = yesterday.getDay()
+        const yesterdayDayOfWeek = yesterdayDayOfWeekRaw === 0 ? 7 : yesterdayDayOfWeekRaw
+        const yesterdaySchedule = profile.work_schedules?.find((s: any) => s.day_of_week === yesterdayDayOfWeek)
+        if (yesterdaySchedule && yesterdaySchedule.is_active) {
+            await processDailyAbsenceCheck(
+                supabase,
+                profile,
+                yesterdaySchedule,
+                86400, // Force "end of day" seconds to ensure check runs for yesterday
+                yesterdayStr,
+                now,
+                auditResults,
+                startOfMadridYesterday,
+                endOfMadridYesterday
+            )
+        }
     }
 
     // --- TEMPORARY CRON REPORTING (FOR SUPER ADMIN) ---
@@ -330,7 +353,8 @@ async function processClockOutEvent(supabase: any, profile: any, eventTimeStr: s
                 .update({
                     clock_out: autoOutDate.toISOString(),
                     is_incident: true,
-                    incident_reason: `Incidencia: Salida no registrada. Cierre automÃ¡tico del sistema (Margen ${autoOutMarginMinutes} min tras salida prog. ${eventTimeStr}).`
+                    incident_reason: `Incidencia: Salida no registrada. Cierre automático del sistema (Margen ${autoOutMarginMinutes} min tras salida prog. ${eventTimeStr}).`,
+                    updated_at: now.toISOString()
                 })
                 .eq('id', activeEntry.id)
 
@@ -400,7 +424,8 @@ async function processFlexibleAutoClockOut(supabase: any, profile: any, schedule
                 .update({
                     clock_out: now.toISOString(),
                     is_incident: true,
-                    incident_reason: `Incidencia: Cierre automático por exceso de jornada flexible (${workedHours.toFixed(1)}h trabajadas sobre objetivo de ${targetHours}h).`
+                    incident_reason: `Incidencia: Cierre automático por exceso de jornada flexible (${workedHours.toFixed(1)}h trabajadas sobre objetivo de ${targetHours}h).`,
+                    updated_at: now.toISOString()
                 })
                 .eq('id', activeEntry.id)
 
@@ -480,30 +505,37 @@ async function processDailyAbsenceCheck(supabase: any, profile: any, schedule: a
             // Record as a technical incident entry (0 duration)
             const startTimeStr = schedule.start_time || '09:00'
             const [h, m] = startTimeStr.split(':').map(Number)
-            const incidentTime = new Date(now)
-            incidentTime.setHours(h, m, 0, 0)
+            
+            // Construct correct incident time based on the audited date (not just "now")
+            const incidentDate = new Date(dateStr)
+            incidentDate.setHours(h, m, 0, 0)
 
-            await supabase.from('time_entries').insert({
+            const { error: insertError } = await supabase.from('time_entries').insert({
                 user_id: profile.id,
                 company_id: profile.company_id,
-                clock_in: incidentTime.toISOString(),
-                clock_out: incidentTime.toISOString(),
+                clock_in: incidentDate.toISOString(),
+                clock_out: incidentDate.toISOString(),
                 is_incident: true,
                 incident_reason: 'Horario laboral sin fichar',
                 origin: 'system',
-                entry_type: 'work'
+                entry_type: 'work',
+                updated_at: now.toISOString()
             })
 
-            auditResults.push(`Falta de Asistencia: <b>${profile.full_name}</b> no ha fichado hoy. Incidencia creada.`)
+            if (insertError) {
+                auditResults.push(`❌ Error al crear incidencia para <b>${profile.full_name}</b>: ${insertError.message}`)
+            } else {
+                auditResults.push(`Falta de Asistencia: <b>${profile.full_name}</b> no ha fichado hoy. Incidencia creada.`)
 
-            await sendTemplatedEmail(
-                profile.email,
-                'daily_absence_incident',
-                {
-                    FullName: profile.full_name,
-                    Date: dateStr
-                }
-            )
+                await sendTemplatedEmail(
+                    profile.email,
+                    'daily_absence_incident',
+                    {
+                        FullName: profile.full_name,
+                        Date: dateStr
+                    }
+                )
+            }
         }
     }
 }
