@@ -5,7 +5,7 @@ import { Clock, Palmtree, Calendar } from "lucide-react"
 export default async function FichajePage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    const { data: profile } = await supabase.from('profiles').select('full_name, role, department_id, schedule_type, total_vacation_days, total_personal_days, departments(name)').eq('id', user?.id).single()
+    const { data: profile } = await supabase.from('profiles').select('full_name, role, department_id, schedule_type, total_vacation_days, total_personal_days, scheduled_hours, departments(name)').eq('id', user?.id).single()
 
     // Fetch user schedule for today (in Madrid time)
     const madridNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Europe/Madrid' }))
@@ -136,16 +136,26 @@ export default async function FichajePage() {
     const formattedTotalToday = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 
     // Calculate target hours for progress
-    let targetMinutes = 0 // Default 0h if no schedule
-    if (todaySchedule) {
-        const s1_start = new Date(`1970-01-01T${todaySchedule.start_time}`).getTime()
-        const s1_end = new Date(`1970-01-01T${todaySchedule.end_time}`).getTime()
-        targetMinutes = (s1_end - s1_start) / (1000 * 60)
+    let targetMinutes = 0
+    const defaultTargetHours = profile?.scheduled_hours ?? 8.0
 
-        if (todaySchedule.start_time_2 && todaySchedule.end_time_2) {
-            const s2_start = new Date(`1970-01-01T${todaySchedule.start_time_2}`).getTime()
-            const s2_end = new Date(`1970-01-01T${todaySchedule.end_time_2}`).getTime()
-            targetMinutes += (s2_end - s2_start) / (1000 * 60)
+    if (todaySchedule) {
+        if (profile?.schedule_type === 'flexible') {
+            targetMinutes = (todaySchedule.target_total_hours || defaultTargetHours) * 60
+        } else if (todaySchedule.start_time && todaySchedule.end_time) {
+            const timeToMinutes = (t: string) => {
+                if (!t) return 0
+                const [h, m] = t.split(':').map(Number)
+                return (h || 0) * 60 + (m || 0)
+            }
+            targetMinutes = timeToMinutes(todaySchedule.end_time) - timeToMinutes(todaySchedule.start_time)
+            if (todaySchedule.start_time_2 && todaySchedule.end_time_2) {
+                targetMinutes += timeToMinutes(todaySchedule.end_time_2) - timeToMinutes(todaySchedule.start_time_2)
+            }
+            // Fallback if fixed calculation resulted in 0 but there is a target (rare)
+            if (targetMinutes <= 0) targetMinutes = (todaySchedule.target_total_hours || defaultTargetHours) * 60
+        } else {
+            targetMinutes = (todaySchedule.target_total_hours || defaultTargetHours) * 60
         }
     }
 
