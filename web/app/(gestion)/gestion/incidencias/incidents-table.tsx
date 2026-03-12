@@ -39,8 +39,38 @@ import { useTransition } from "react"
 import { Plus, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
+interface WorkSchedule {
+    day_of_week: number
+    start_time: string | null
+    end_time: string | null
+    start_time_2: string | null
+    end_time_2: string | null
+    is_active: boolean
+}
+
+interface TimeEntry {
+    id: string
+    clock_in: string
+    clock_out: string | null
+    correction_reason: string | null
+    incident_reason: string | null
+    is_manual_correction: boolean
+    is_incident: boolean
+    is_audited: boolean
+    updated_at: string
+    profiles: {
+        full_name: string
+        department_id: string | null
+        schedule_type: string
+        work_schedules?: WorkSchedule[]
+        departments?: {
+            name: string
+        } | null
+    }
+}
+
 interface IncidentsTableProps {
-    initialIncidents: any[]
+    initialIncidents: TimeEntry[]
     totalCount: number
     departments?: { id: string, name: string }[]
 }
@@ -58,7 +88,7 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
     const [auditedFilter, setAuditedFilter] = useState(searchParams.get('audited') || 'no')
 
     // Edit State
-    const [editingEntry, setEditingEntry] = useState<any>(null)
+    const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null)
     const [reason, setReason] = useState("")
     const [start, setStart] = useState("")
     const [end, setEnd] = useState("")
@@ -151,7 +181,7 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
     }
 
     // Edit and Audit Helpers
-    function handleEditClick(entry: any) {
+    function handleEditClick(entry: TimeEntry) {
         setEditingEntry(entry)
         setReason(entry.correction_reason || "")
 
@@ -167,6 +197,8 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
     }
 
     async function handleSave() {
+        if (!editingEntry) return
+
         startTransition(async () => {
             const result = await updateTimeEntry(editingEntry.id, {
                 clockIn: new Date(start).toISOString(),
@@ -191,7 +223,7 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
         return `${hours}h ${minutes}m`
     }
 
-    function getScheduleDescription(entry: any) {
+    function getScheduleDescription(entry: TimeEntry) {
         if (!entry || !entry.profiles) return 'Sin horario definido'
 
         const profile = entry.profiles
@@ -203,13 +235,15 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
         let dayOfWeek = date.getDay()
         if (dayOfWeek === 0) dayOfWeek = 7
 
-        const schedule = profile.work_schedules?.find((s: any) => s.day_of_week === dayOfWeek && s.is_active)
+        const schedule = profile.work_schedules?.find((s) =>
+            s.day_of_week === dayOfWeek && s.is_active
+        )
 
         if (!schedule) return 'Sin horario fijado para este día'
 
         const formatTime = (time: string) => time.slice(0, 5)
 
-        let desc = `${formatTime(schedule.start_time)} - ${formatTime(schedule.end_time)}`
+        let desc = `${formatTime(schedule.start_time!)} - ${formatTime(schedule.end_time!)}`
         if (schedule.start_time_2 && schedule.end_time_2) {
             desc += ` y ${formatTime(schedule.start_time_2)} - ${formatTime(schedule.end_time_2)}`
         }
@@ -354,7 +388,7 @@ export function IncidentsTable({ initialIncidents, totalCount, departments = [] 
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {initialIncidents.map((inc: any) => (
+                        {initialIncidents.map((inc: TimeEntry) => (
                             <TableRow key={inc.id} className="group border-b border-slate-50 transition-colors hover:bg-blue-50/30">
                                 <TableCell className="py-6 px-6 font-medium">
                                     <div className="flex flex-col gap-1.5">

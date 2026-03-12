@@ -236,7 +236,18 @@ export async function getEmployeeSchedules(userId: string) {
     return { data }
 }
 
-export async function updateEmployeeSchedules(userId: string, schedules: any[], scheduleType: string = 'fixed') {
+interface ScheduleInput {
+    day_of_week: number
+    start_time?: string | null
+    end_time?: string | null
+    start_time_2?: string | null
+    end_time_2?: string | null
+    target_total_hours?: number
+    is_active?: boolean
+    active?: boolean
+}
+
+export async function updateEmployeeSchedules(userId: string, schedules: ScheduleInput[], scheduleType: string = 'fixed') {
     const supabase = await createClient()
 
     // 1. Delete existing
@@ -246,7 +257,7 @@ export async function updateEmployeeSchedules(userId: string, schedules: any[], 
     if (schedules.length > 0) {
         const isFlex = scheduleType === 'flexible'
         const cleanSchedules = schedules.map(s => {
-            const cleanTime = (t: any) => (t && String(t).trim().length > 0) ? t : null
+            const cleanTime = (t: string | null | undefined) => (t && String(t).trim().length > 0) ? t : null
 
             return {
                 profile_id: userId,
