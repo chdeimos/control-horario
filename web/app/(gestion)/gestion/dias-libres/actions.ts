@@ -121,7 +121,7 @@ export async function requestTimeOff(formData: FormData) {
     })
 
     if (error) return { error: error.message }
-    revalidatePath('/time-off')
+    revalidatePath('/gestion/dias-libres')
     return { success: true }
 }
 
@@ -199,7 +199,7 @@ export async function updateRequestStatus(requestId: string, status: 'pending' |
         console.error("Email fetch failed:", err)
     }
 
-    revalidatePath('/time-off')
+    revalidatePath('/gestion/dias-libres')
     return { success: true }
 }
 
@@ -267,7 +267,7 @@ export async function editTimeOffRequest(requestId: string, formData: FormData) 
         }
     } catch (err) { console.error(err) }
 
-    revalidatePath('/time-off')
+    revalidatePath('/gestion/dias-libres')
     return { success: true }
 }
 
@@ -334,7 +334,7 @@ export async function adminCreateTimeOff(formData: FormData) {
         }
     } catch (err) { console.error(err) }
 
-    revalidatePath('/time-off')
+    revalidatePath('/gestion/dias-libres')
     revalidatePath('/dashboard')
     return { success: true }
 }
@@ -410,7 +410,7 @@ export async function deleteTimeOffRequest(requestId: string) {
         }
     } catch (err) { console.error("Cancellation email failed:", err) }
 
-    revalidatePath('/time-off')
+    revalidatePath('/gestion/dias-libres')
     revalidatePath('/dashboard')
     return { success: true }
 }

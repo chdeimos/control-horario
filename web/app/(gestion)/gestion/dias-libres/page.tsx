@@ -40,7 +40,11 @@ export default async function TimeOffPage({
             query = query.eq('profiles.department_id', profile.department_id)
         }
 
-        const { data } = await query.order('created_at', { ascending: false })
+        const { data, error } = await query.order('created_at', { ascending: false })
+        
+        if (error) {
+            console.error("Error fetching time_off_requests:", error)
+        }
         const rawRequests = data || []
 
         // Calculate used days per user (split by type)
