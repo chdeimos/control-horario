@@ -87,11 +87,11 @@ export function generatePDF(
         if (leave) {
             const typeLabels: Record<string, string> = {
                 'vacation': 'VACACIONES',
-                'sick_leave': 'BAJA MÉDICA',
-                'personal_days': 'ASUNTOS PROPIOS',
+                'medical': 'BAJA MÉDICA',
+                'personal': 'ASUNTOS PROPIOS',
                 'other': 'AUSENCIA JUSTIF.'
             }
-            note = typeLabels[leave.type] || 'AUSENCIA'
+            note = typeLabels[leave.request_type] || 'AUSENCIA'
             expected = 0
         }
 
