@@ -107,7 +107,14 @@ export function MyRequestsTable({ requests }: { requests: any[] }) {
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="py-8">
-                                    <p className="text-slate-500 text-[15px] italic">“{req.reason || 'Sin motivo'}”</p>
+                                    <div className="flex flex-col gap-1.5">
+                                        <p className="text-slate-500 text-[15px] italic">“{req.reason || 'Sin motivo'}”</p>
+                                        {req.manager_note && (
+                                            <div className={`text-[12px] font-bold px-2 py-0.5 rounded w-fit border ${req.status === 'rejected' ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>
+                                                <span className="uppercase tracking-wider text-[10px] opacity-70">Respuesta:</span> {req.manager_note}
+                                            </div>
+                                        )}
+                                    </div>
                                 </TableCell>
                                 <TableCell className="text-right py-8 px-8">
                                     {req.status === 'pending' && (
@@ -171,10 +178,14 @@ export function MyRequestsTable({ requests }: { requests: any[] }) {
                                 </div>
                             )}
 
-                            {req.status === 'rejected' && req.manager_note && (
-                                <div className="mt-3 bg-rose-50 rounded-[5px] p-3 border border-rose-100">
-                                    <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Motivo denegación</p>
-                                    <p className="text-xs text-rose-500 font-medium italic">{req.manager_note}</p>
+                            {req.manager_note && (
+                                <div className={`mt-3 rounded-[5px] p-3 border ${req.status === 'rejected' ? 'bg-rose-50 border-rose-100' : 'bg-blue-50 border-blue-100'}`}>
+                                    <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${req.status === 'rejected' ? 'text-rose-600' : 'text-blue-600'}`}>
+                                        Respuesta del Administrador
+                                    </p>
+                                    <p className={`text-xs font-medium italic ${req.status === 'rejected' ? 'text-rose-500' : 'text-blue-500'}`}>
+                                        {req.manager_note}
+                                    </p>
                                 </div>
                             )}
                         </div>
