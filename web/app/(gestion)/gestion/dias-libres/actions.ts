@@ -122,6 +122,7 @@ export async function requestTimeOff(formData: FormData) {
 
     if (error) return { error: error.message }
     revalidatePath('/gestion/dias-libres')
+    revalidatePath('/fichaje/dias-libres')
     return { success: true }
 }
 
@@ -200,6 +201,7 @@ export async function updateRequestStatus(requestId: string, status: 'pending' |
     }
 
     revalidatePath('/gestion/dias-libres')
+    revalidatePath('/fichaje/dias-libres')
     return { success: true }
 }
 
@@ -268,6 +270,7 @@ export async function editTimeOffRequest(requestId: string, formData: FormData) 
     } catch (err) { console.error(err) }
 
     revalidatePath('/gestion/dias-libres')
+    revalidatePath('/fichaje/dias-libres')
     return { success: true }
 }
 
@@ -335,6 +338,7 @@ export async function adminCreateTimeOff(formData: FormData) {
     } catch (err) { console.error(err) }
 
     revalidatePath('/gestion/dias-libres')
+    revalidatePath('/fichaje/dias-libres')
     revalidatePath('/dashboard')
     return { success: true }
 }
@@ -411,6 +415,7 @@ export async function deleteTimeOffRequest(requestId: string) {
     } catch (err) { console.error("Cancellation email failed:", err) }
 
     revalidatePath('/gestion/dias-libres')
+    revalidatePath('/fichaje/dias-libres')
     revalidatePath('/dashboard')
     return { success: true }
 }

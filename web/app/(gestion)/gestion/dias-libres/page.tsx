@@ -33,7 +33,7 @@ export default async function TimeOffPage({
         // Fetch requests. If manager, only for their department.
         let query = supabase
             .from('time_off_requests')
-            .select('*, profiles!inner(full_name, total_vacation_days, total_personal_days, department_id)')
+            .select('*, profiles(full_name, total_vacation_days, total_personal_days, department_id)')
             .eq('company_id', profile.company_id)
 
         if (profile.role === 'manager' && profile.department_id) {
@@ -46,6 +46,7 @@ export default async function TimeOffPage({
             console.error("Error fetching time_off_requests:", error)
         }
         const rawRequests = data || []
+        console.log(`[DEBUG] Solicitudes recuperadas para empresa ${profile.company_id}: ${rawRequests.length}`)
 
         // Calculate used days per user (split by type)
         const userUsage: Record<string, { vacation: number, personal: number }> = {}
