@@ -121,6 +121,7 @@ export function TimeEntriesTable({
         if (lower === 'ios') return 'iOS'
         if (lower === 'android') return 'Android'
         if (lower === 'work') return 'Presencial'
+        if (lower === 'manual_correction') return 'CORREGIDA'
         return origin.charAt(0).toUpperCase() + origin.slice(1)
     }
 
