@@ -3,13 +3,13 @@ import autoTable from 'jspdf-autotable'
 import { format } from 'date-fns'
 
 export function generatePDF(
-    company: any, 
-    employee: any, 
-    entries: any[], 
-    month: number, 
-    year: number, 
-    branding?: any, 
-    schedules: any[] = [], 
+    company: any,
+    employee: any,
+    entries: any[],
+    month: number,
+    year: number,
+    branding?: any,
+    schedules: any[] = [],
     timeOff: any[] = []
 ): jsPDF {
     const doc = new jsPDF()
@@ -42,22 +42,22 @@ export function generatePDF(
     doc.text(`${month}/${year}`, 178, 24)
 
     // Process Entries
-    const dailyRecords: Record<string, { 
-        slots: { in: string, out: string, mod: string }[], 
-        total: number, 
-        expected: number, 
-        note: string 
+    const dailyRecords: Record<string, {
+        slots: { in: string, out: string, mod: string }[],
+        total: number,
+        expected: number,
+        note: string
     }> = {}
     const daysInMonth = new Date(year, month, 0).getDate()
 
     for (let i = 1; i <= daysInMonth; i++) {
         const d = new Date(year, month - 1, i)
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`
-        
+
         // Calculate Expected Hours
         const dayOfWeek = d.getDay() === 0 ? 7 : d.getDay()
         const schedule = schedules.find(s => s.day_of_week === dayOfWeek)
-        
+
         let expected = 0
         if (schedule && schedule.is_active) {
             if (employee.schedule_type === 'fixed' && schedule.start_time && schedule.end_time) {
@@ -91,7 +91,7 @@ export function generatePDF(
                 'personal': 'ASUNTOS PROPIOS',
                 'other': 'AUSENCIA JUSTIF.'
             }
-            note = typeLabels[leave.request_type] || 'AUSENCIA'
+            note = typeLabels[leave.request_type] || 'AUSENCIA.'
             expected = 0
         }
 
@@ -130,7 +130,7 @@ export function generatePDF(
     const tableBody = Object.keys(dailyRecords).map(date => {
         const rec = dailyRecords[date]
         const diff = rec.total - rec.expected
-        
+
         let workedDisplay = formatDuration(rec.total)
         let diffDisplay = formatDuration(diff)
 
