@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Script de actualización para servidor Debian
+
+# Asegurarse de estar en el directorio correcto (ajustar si es necesario)
+# cd /ruta/a/la/aplicacion/Control\ Horario
+
+echo "🚀 Iniciando actualización de la aplicación..."
+
+# Entramos en la carpeta web donde reside la lógica Next.js
+cd web || { echo "❌ No se encontró la carpeta 'web'"; exit 1; }
+
+# 1. Obtener los últimos cambios de Git
+echo "📥 Descargando últimos cambios de GitHub..."
+git pull origin master
+
+# 2. Limpiar caché de compilación anterior para evitar conflictos de chunks
+echo "🧹 Limpiando caché de Next.js..."
+rm -rf .next
+
+# 3. Instalar dependencias (por si ha habido cambios en package.json)
+echo "📦 Actualizando dependencias..."
+npm install
+
+# 4. Compilar la aplicación para producción
+echo "🏗️ Compilando aplicación (esto puede tardar unos minutos)..."
+npm run build
+
+# 5. Reiniciar el proceso en PM2 para aplicar los cambios
+echo "🔄 Reiniciando servicio en PM2..."
+pm2 restart control-horario-web
+
+echo "✅ ¡Actualización completada con éxito!"
