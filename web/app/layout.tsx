@@ -35,10 +35,10 @@ export async function generateMetadata(): Promise<Metadata> {
       default: appName,
     },
     description: "Sistema avanzado de control horario y gestión de RRHH",
-    icons: favicon ? {
-      icon: favicon,
-      apple: favicon,
-    } : undefined,
+    icons: {
+      icon: favicon || '/favicon.png',
+      apple: favicon || '/favicon.png',
+    },
     manifest: '/manifest.json',
     appleWebApp: {
       capable: true,
