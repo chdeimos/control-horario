@@ -15,12 +15,13 @@ DECLARE
     table_list TEXT[] := ARRAY[
         'plans', 'volume_discounts', 'companies', 'departments', 
         'profiles', 'devices', 'time_entries', 'time_off_requests', 
-        'company_monthly_metrics', 'invoices', 'system_settings', 'work_schedules'
+        'company_monthly_metrics', 'invoices', 'system_settings', 'work_schedules',
+        'access_logs', 'admin_access_logs', 'cron_logs', 'email_logs'
     ];
     current_table TEXT;
 BEGIN
     backup = jsonb_build_object(
-        'version', '3.4',
+        'version', '3.5',
         'timestamp', now(),
         'auth_users', (SELECT COALESCE(jsonb_agg(u), '[]'::jsonb) FROM auth.users u),
         'auth_identities', (SELECT COALESCE(jsonb_agg(i), '[]'::jsonb) FROM auth.identities i)
@@ -54,6 +55,7 @@ DECLARE
     cols_list TEXT;
     -- Order is important for FKs: children first for delete, parents first for insert
     delete_order TEXT[] := ARRAY[
+        'access_logs', 'admin_access_logs', 'cron_logs', 'email_logs',
         'invoices', 'company_monthly_metrics', 'work_schedules', 'time_entries', 
         'time_off_requests', 'devices', 'profiles', 'departments', 
         'companies', 'volume_discounts', 'plans', 'system_settings'
@@ -61,7 +63,8 @@ DECLARE
     insert_order TEXT[] := ARRAY[
         'system_settings', 'plans', 'volume_discounts', 'companies', 
         'departments', 'profiles', 'devices', 'time_off_requests', 
-        'time_entries', 'work_schedules', 'company_monthly_metrics', 'invoices'
+        'time_entries', 'work_schedules', 'company_monthly_metrics', 'invoices',
+        'access_logs', 'admin_access_logs', 'cron_logs', 'email_logs'
     ];
 BEGIN
     -- 1. Delete existing data (if tables exist)
