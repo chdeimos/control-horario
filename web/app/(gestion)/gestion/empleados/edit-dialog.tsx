@@ -322,14 +322,15 @@ export function EditEmployeeDialog({
                                         </Select>
                                     </div>
                                     <div className="grid gap-2.5">
-                                        <Label htmlFor="pin_code" className={`text-[11px] font-bold uppercase tracking-widest ml-1 ${errors.pin_code ? "text-rose-500" : "text-slate-500"}`}>Código PIN (Acceso Físico)</Label>
+                                        <Label htmlFor="pin_code" className={`text-[11px] font-bold uppercase tracking-widest ml-1 ${errors.pin_code ? "text-rose-500" : "text-slate-500"}`}>Código PIN (Acceso Secreto)</Label>
                                         <Input
                                             id="pin_code" name="pin_code"
-                                            defaultValue={employee.pin_code || ''}
+                                            defaultValue=""
                                             maxLength={4}
                                             placeholder="XXXX"
                                             className={`h-11 bg-slate-50 border-slate-100 rounded-lg text-sm font-semibold text-slate-700 tracking-[0.5em] ${errors.pin_code ? "border-rose-500 ring-rose-500/20" : "focus:ring-[#3b60c1]/20"}`}
                                         />
+                                        <p className="text-[9px] font-medium text-slate-400 italic">Dejar en blanco para mantener el actual. Por seguridad, el PIN nunca es visible.</p>
                                         {errors.pin_code && <p className="text-[10px] font-bold text-rose-500 uppercase tracking-tight">{errors.pin_code}</p>}
                                     </div>
                                 </div>

@@ -84,4 +84,4 @@ npx expo start
 Este software ha sido diseñado para ayudar a las empresas a cumplir con el **Registro Jornada (Real Decreto-ley 8/2019)** en España, garantizando la trazabilidad de los horarios y la custodia de los datos durante los 4 años legales requeridos.
 
 ---
-Creado con ❤️ por **Deimos** - 2026
+Creado con ❤️ por **CHDeimos** - 2026

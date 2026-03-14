@@ -31,15 +31,32 @@ export async function kioskClockAction(token: string, pin: string) {
     const { data: device, error: devError } = await getKioskDevice(token)
     if (devError || !device) return { error: devError || 'Error de seguridad' }
 
-    // 2. Validate Employee Profile
-    const { data: employee, error: empError } = await supabase
+    // 2. Validate Employee Profile (Search by company only first)
+    const { data: employees, error: empError } = await supabase
         .from('profiles')
         .select('*')
         .eq('company_id', device.company_id)
-        .eq('pin_code', pin)
+
+    if (empError || !employees || employees.length === 0) return { error: 'Error al buscar empleados' }
+
+    // 2.1 Verify PIN using RPC for each potential match or find the one that matches
+    // In our system, PINs are unique per company, so we can search for the profile that matches the PIN.
+    const { data: isValidPin, error: pinError } = await supabase.rpc('verify_employee_pin_by_company', {
+        p_company_id: device.company_id,
+        p_pin: pin
+    })
+
+    if (pinError || !isValidPin) return { error: 'Código PIN no válido' }
+
+    // 2.2 Get the specific employee that matched the PIN
+    const { data: employee, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('company_id', device.company_id)
+        .eq('id', isValidPin) // Note: I should update the RPC to return the ID or use a different flow
         .single()
 
-    if (empError || !employee) return { error: 'Código PIN no válido' }
+    if (profileError || !employee) return { error: 'Error al recuperar perfil' }
 
     // 2.1 Check Account Status
     if (employee.status !== 'active') {

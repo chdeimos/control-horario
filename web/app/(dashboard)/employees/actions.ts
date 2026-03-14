@@ -53,6 +53,7 @@ export async function inviteEmployee(formData: FormData) {
     const jobTitle = String(formData.get('job_title')) || null
     let departmentId = String(formData.get('department_id')) || null
     const scheduledHours = parseFloat(String(formData.get('scheduled_hours'))) || 8.0
+    const pin = String(formData.get('pin_code')) || null
     const totalVacation = parseInt(String(formData.get('total_vacation_days'))) || 22
     const totalPersonal = parseInt(String(formData.get('total_personal_days'))) || 0
 
@@ -64,8 +65,24 @@ export async function inviteEmployee(formData: FormData) {
         departmentId = adminProfile.department_id
     }
 
-    const supabaseAdmin = createAdminClient()
+    // PIN Code Validation (Security RPC)
+    if (pin && pin.trim().length > 0) {
+        if (!/^\d{4}$/.test(pin)) {
+            return { error: 'El código PIN debe tener exactamente 4 dígitos numéricos.' }
+        }
 
+        const { data: pinExists, error: pinCheckError } = await supabase.rpc('check_pin_exists_in_company', {
+            p_company_id: adminProfile.company_id,
+            p_pin: pin
+        })
+
+        if (pinCheckError) return { error: `Error validando PIN: ${pinCheckError.message}` }
+        if (pinExists) {
+            return { error: 'Este código PIN ya está asignado a otro empleado de tu empresa.' }
+        }
+    }
+
+    const supabaseAdmin = createAdminClient()
     const siteUrl = await getSiteUrl()
 
     // 1. Invite User
@@ -102,6 +119,15 @@ export async function inviteEmployee(formData: FormData) {
 
     if (profileError) {
         return { error: `Usuario invitado pero error al crear perfil: ${profileError.message}` }
+    }
+
+    // 3. Save PIN Hash if provided
+    if (pin && pin.trim().length > 0) {
+        const { error: pinHashError } = await supabaseAdmin.rpc('update_employee_pin', {
+            p_user_id: newUserId,
+            p_new_pin: pin
+        })
+        if (pinHashError) console.error('Error saving PIN hash:', pinHashError)
     }
 
     if (inviteData?.properties?.action_link) {
@@ -153,6 +179,24 @@ export async function updateEmployee(userId: string, formData: FormData) {
         departmentId = adminProfile.department_id
     }
 
+    // PIN Code Validation (Security RPC)
+    if (pin && pin.trim().length > 0) {
+        if (!/^\d{4}$/.test(pin)) {
+            return { error: 'El código PIN debe tener exactamente 4 dígitos numéricos.' }
+        }
+        
+        const { data: pinExists, error: pinCheckError } = await supabase.rpc('check_pin_exists_in_company', {
+            p_company_id: adminProfile.company_id,
+            p_pin: pin,
+            p_exclude_user_id: userId
+        })
+
+        if (pinCheckError) return { error: `Error validando PIN: ${pinCheckError.message}` }
+        if (pinExists) {
+            return { error: 'Este código PIN ya está asignado a otro empleado de tu empresa.' }
+        }
+    }
+
     // Check Plan Limit if changing status to active
     if (status === 'active' && targetProfile?.status !== 'active') {
         const limitCheck = await checkPlanLimit(adminProfile.company_id)
@@ -170,7 +214,6 @@ export async function updateEmployee(userId: string, formData: FormData) {
         phone: phone,
         social_security_number: ssn,
         department_id: departmentId,
-        pin_code: pin,
         total_vacation_days: totalVacation,
         total_personal_days: totalPersonal,
         scheduled_hours: scheduledHours,
@@ -180,6 +223,16 @@ export async function updateEmployee(userId: string, formData: FormData) {
 
     if (error) return { error: error.message }
 
+    // 3. Update PIN Hash if provided
+    if (pin && pin.trim().length > 0) {
+        const { error: pinHashError } = await supabaseAdmin.rpc('update_employee_pin', {
+            p_user_id: userId,
+            p_new_pin: pin
+        })
+        if (pinHashError) return { error: `Perfil actualizado pero error al guardar PIN: ${pinHashError.message}` }
+    }
+
+    revalidatePath('/dashboard/employees')
     revalidatePath('/employees')
     return { success: true }
 }

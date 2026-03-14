@@ -84,14 +84,13 @@ export async function inviteEmployee(formData: FormData) {
             return { error: 'El código PIN debe tener exactamente 4 dígitos numéricos.' }
         }
 
-        const { data: existingPin } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('company_id', adminProfile.company_id)
-            .eq('pin_code', pin)
-            .maybeSingle()
+        const { data: pinExists, error: pinCheckError } = await supabase.rpc('check_pin_exists_in_company', {
+            p_company_id: adminProfile.company_id,
+            p_pin: pin
+        })
 
-        if (existingPin) {
+        if (pinCheckError) return { error: `Error validando PIN: ${pinCheckError.message}` }
+        if (pinExists) {
             return { error: 'Este código PIN ya está asignado a otro empleado de tu empresa.' }
         }
     }
@@ -124,7 +123,6 @@ export async function inviteEmployee(formData: FormData) {
         department: jobTitle,
         department_id: adminProfile.role === 'manager' ? adminProfile.department_id : departmentId,
         scheduled_hours: scheduledHours,
-        pin_code: pin,
         total_vacation_days: totalVacation,
         total_personal_days: totalPersonal,
         status: 'active'
@@ -132,6 +130,15 @@ export async function inviteEmployee(formData: FormData) {
 
     if (profileError) {
         return { error: `Usuario invitado pero error al crear perfil: ${profileError.message}` }
+    }
+
+    // 3. Save PIN Hash if provided
+    if (pin && pin.trim().length > 0) {
+        const { error: pinHashError } = await supabaseAdmin.rpc('update_employee_pin', {
+            p_user_id: newUserId,
+            p_new_pin: pin
+        })
+        if (pinHashError) console.error('Error saving PIN hash:', pinHashError)
     }
 
     if (inviteData?.properties?.action_link) {
@@ -182,15 +189,15 @@ export async function updateEmployee(userId: string, formData: FormData) {
         if (!/^\d{4}$/.test(pin)) {
             return { error: 'El código PIN debe tener exactamente 4 dígitos numéricos.' }
         }
-        const { data: existingPin } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('company_id', adminProfile.company_id)
-            .eq('pin_code', pin)
-            .neq('id', userId)
-            .maybeSingle()
+        
+        const { data: pinExists, error: pinCheckError } = await supabase.rpc('check_pin_exists_in_company', {
+            p_company_id: adminProfile.company_id,
+            p_pin: pin,
+            p_exclude_user_id: userId
+        })
 
-        if (existingPin) {
+        if (pinCheckError) return { error: `Error validando PIN: ${pinCheckError.message}` }
+        if (pinExists) {
             return { error: 'Este código PIN ya está asignado a otro empleado de tu empresa.' }
         }
     }
@@ -210,7 +217,6 @@ export async function updateEmployee(userId: string, formData: FormData) {
         phone: phone,
         social_security_number: ssn,
         department_id: departmentId,
-        pin_code: pin,
         total_vacation_days: totalVacation,
         total_personal_days: totalPersonal,
         scheduled_hours: scheduledHours,
@@ -219,6 +225,15 @@ export async function updateEmployee(userId: string, formData: FormData) {
     }).eq('id', userId)
 
     if (error) return { error: error.message }
+
+    // 3. Update PIN Hash if provided
+    if (pin && pin.trim().length > 0) {
+        const { error: pinHashError } = await supabaseAdmin.rpc('update_employee_pin', {
+            p_user_id: userId,
+            p_new_pin: pin
+        })
+        if (pinHashError) return { error: `Perfil actualizado pero error al guardar PIN: ${pinHashError.message}` }
+    }
 
     revalidatePath('/gestion/empleados')
     return { success: true }
