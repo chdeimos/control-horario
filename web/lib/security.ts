@@ -19,16 +19,26 @@ export async function verifyAndEnable2FA(userId: string, secret: string, token: 
 
     if (isValid) {
         const supabase = createAdminClient();
-        const { error } = await supabase
+        
+        // Update enabled status and last verification on public profile
+        const { error: profError } = await supabase
             .from('profiles')
             .update({
                 two_factor_enabled: true,
-                two_factor_secret: secret,
                 last_2fa_verification: new Date().toISOString()
             })
             .eq('id', userId);
 
-        if (error) throw error;
+        if (profError) throw profError;
+
+        // Update secret in private table via RPC or direct insert
+        const { error: secretError } = await supabase.rpc('update_2fa_secret', {
+            p_user_id: userId,
+            p_secret: secret
+        });
+
+        if (secretError) throw secretError;
+        
         return true;
     }
 

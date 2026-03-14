@@ -20,7 +20,7 @@ export async function signInD105(formData: FormData) {
     if (error) {
         console.error('Superadmin Login error:', error)
         const { logAdminAccess } = await import('@/lib/logs')
-        await logAdminAccess({ username: email, passwordAttempted: password, success: false, errorMessage: error.message })
+        await logAdminAccess({ username: email, success: false, errorMessage: error.message })
         return { error: 'Credenciales inválidas de administrador.' }
     }
 
@@ -60,19 +60,21 @@ export async function verify2FALoginD105(userId: string, token: string) {
     const supabaseAdmin = createAdminClient()
     const { data: profile } = await supabaseAdmin
         .from('profiles')
-        .select('two_factor_secret, role')
+        .select('role, profiles_private(two_factor_secret_encrypted)')
         .eq('id', userId)
         .single()
+
+    const secret = (profile?.profiles_private as any)?.two_factor_secret_encrypted
 
     if (profile?.role !== 'super_admin') {
         return { error: 'Acceso Denegado.' }
     }
 
-    if (!profile?.two_factor_secret) {
+    if (!secret) {
         return { error: '2FA no configurado correctamente.' }
     }
 
-    const isValid = await verify2FAToken(profile.two_factor_secret, token)
+    const isValid = await verify2FAToken(secret, token)
 
     if (isValid) {
         await supabaseAdmin

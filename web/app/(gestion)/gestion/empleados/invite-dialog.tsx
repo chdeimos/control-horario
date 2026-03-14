@@ -110,11 +110,12 @@ export function InviteEmployeeDialog({ departments, settings }: { departments: a
                         <Label htmlFor="pin_code" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Código PIN (Acceso Físico)</Label>
                         <Input
                             id="pin_code" name="pin_code"
+                            type="password"
                             maxLength={4}
                             placeholder="Ej. 1234"
                             className="h-12 bg-slate-50 border-slate-100 rounded-lg text-sm font-bold text-slate-700 tracking-[0.5em] focus:ring-[#3b60c1]/20 focus:border-[#3b60c1] transition-all"
                         />
-                        <p className="text-[9px] font-medium text-slate-400 italic font-medium tracking-tight">Código de 4 cifras para fichar desde el terminal fijo.</p>
+                        <p className="text-[9px] font-medium text-slate-400 italic tracking-tight">El PIN es secreto y no se podrá visualizar después de guardarlo.</p>
                     </div>
 
                     <div className="flex justify-end pt-4 border-t border-slate-100">

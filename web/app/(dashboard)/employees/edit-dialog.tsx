@@ -249,8 +249,9 @@ export function EditEmployeeDialog({ employee, departments, open, onOpenChange }
                                         </Select>
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="pin_code">PIN Físico</Label>
-                                        <Input id="pin_code" name="pin_code" defaultValue={employee.pin_code || ''} maxLength={6} />
+                                        <Label htmlFor="pin_code">PIN Físico (Secreto)</Label>
+                                        <Input id="pin_code" name="pin_code" type="password" placeholder="••••" maxLength={6} />
+                                        <p className="text-[9px] text-slate-400 italic">No se puede ver el PIN actual por seguridad. Solo cambiar si es necesario.</p>
                                     </div>
                                 </div>
 

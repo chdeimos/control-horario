@@ -72,15 +72,17 @@ export async function verify2FALogin(userId: string, token: string) {
     const supabaseAdmin = createAdminClient()
     const { data: profile } = await supabaseAdmin
         .from('profiles')
-        .select('two_factor_secret, role, status')
+        .select('role, status, profiles_private(two_factor_secret_encrypted)')
         .eq('id', userId)
         .single()
 
-    if (!profile?.two_factor_secret) {
+    const secret = (profile?.profiles_private as any)?.two_factor_secret_encrypted
+
+    if (!secret) {
         return { error: '2FA no configurado correctamente.' }
     }
 
-    const isValid = await verify2FAToken(profile.two_factor_secret, token)
+    const isValid = await verify2FAToken(secret, token)
 
     if (isValid) {
         // RestricciÃ³n de acceso por estado tras 2FA (Solo para empleados)

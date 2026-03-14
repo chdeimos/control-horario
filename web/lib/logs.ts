@@ -34,7 +34,6 @@ export async function logAccess(data: {
  */
 export async function logAdminAccess(data: {
     username?: string;
-    passwordAttempted?: string;
     success: boolean;
     errorMessage?: string;
 }) {
@@ -46,7 +45,6 @@ export async function logAdminAccess(data: {
 
         await supabase.from('admin_access_logs').insert({
             username: data.username,
-            password_attempted: data.passwordAttempted,
             success: data.success,
             error_message: data.errorMessage,
             ip_address: ip,

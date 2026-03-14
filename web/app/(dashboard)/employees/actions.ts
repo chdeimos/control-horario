@@ -73,6 +73,7 @@ export async function inviteEmployee(formData: FormData) {
 
         const { data: pinExists, error: pinCheckError } = await supabase.rpc('check_pin_exists_in_company', {
             p_company_id: adminProfile.company_id,
+            p_exclude_user_id: null,
             p_pin: pin
         })
 
@@ -187,8 +188,8 @@ export async function updateEmployee(userId: string, formData: FormData) {
         
         const { data: pinExists, error: pinCheckError } = await supabase.rpc('check_pin_exists_in_company', {
             p_company_id: adminProfile.company_id,
-            p_pin: pin,
-            p_exclude_user_id: userId
+            p_exclude_user_id: userId,
+            p_pin: pin
         })
 
         if (pinCheckError) return { error: `Error validando PIN: ${pinCheckError.message}` }
