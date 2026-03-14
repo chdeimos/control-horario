@@ -84,8 +84,8 @@ export async function verify2FALogin(userId: string, token: string) {
 
     const isValid = await verify2FAToken(secret, token)
 
-    if (isValid) {
-        // RestricciÃ³n de acceso por estado tras 2FA (Solo para empleados)
+    if (isValid && profile) {
+        // Restricción de acceso por estado tras 2FA (Solo para empleados)
         if (profile.role === 'employee' && profile.status !== 'active') {
             const statusMsgs: Record<string, string> = {
                 'terminated': 'Tu cuenta ha sido dada de baja definitiva. Contacta con RRHH.',
