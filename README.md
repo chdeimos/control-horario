@@ -1,87 +1,85 @@
-# 🕒 ControlPro: Ecosistema de Control Horario Inteligente
+# ControlPro - Sistema de Gestión de Presencia y Control Horario
 
-ControlPro es una solución integral para la gestión de presencia, horarios y cumplimiento legal de jornadas laborales. Diseñado con una arquitectura moderna y escalable, ofrece interfaces específicas para Administradores (Web) y Empleados (App Móvil).
+ControlPro es una solución integral diseñada para facilitar el cumplimiento del registro horario obligatorio, ofreciendo una experiencia moderna, segura y multiplataforma tanto para empresas como para empleados.
 
-![Icono del Proyecto](file:///e:/USUARIOS/DEIMOS/ESCRITORIO/app/Control%20Horario/mobile/assets/icon.png)
+## 🌟 Características Principales
 
-## 🚀 Características Principales
+*   **Multiplataforma**: Acceso vía Web (Administración y Kiosco) y App Móvil (Empleados en movilidad).
+*   **Seguridad Avanzada**:
+    *   Autenticación de Dos Factores (2FA) opcional para administradores.
+    *   Hashing de PINs con BCRYPT para máxima privacidad.
+    *   Aislamiento de datos sensibles en almacenamiento privado.
+*   **Geolocalización**: Registro preciso de la ubicación en cada fichaje para evitar fraudes.
+*   **Gestión de Ausencias**: Control de vacaciones, días personales y bajas médicas con sistema de aprobación.
+*   **Informes y Auditoría**: Generación de informes en PDF y exportaciones para cumplir con inspecciones de trabajo.
+*   **Modo Kiosco**: Interfaz simplificada para tabletas en puntos físicos de entrada/salida.
 
-### 🌐 Panel de Gestión (Web)
-*   **Gestión Multisectorial**: Control de múltiples sedes y departamentos.
-*   **Dashboard en Tiempo Real**: Visualización de empleados activos, ausencias y retrasos.
-*   **Informes Automatizados**: Generación de reportes mensuales en PDF/Excel cumpliendo con la normativa laboral.
-*   **Gestión de Solicitudes**: Flujo de aprobación para vacaciones, asuntos propios e incidencias.
-*   **Personalización (White Label)**: Configuración de logos, colores y políticas de empresa desde el panel.
+## 🛠️ Tecnologías
 
-### 📱 App de Empleado (Móvil)
-*   **Fichaje Geolocalizado**: Registro de entrada y salida con captura obligatoria de coordenadas GPS.
-*   **Sincronización Inteligente**: Continuidad si se empieza el fichaje en web y se termina en el móvil.
-*   **Seguridad Reforzada (2FA)**: Acceso protegido mediante autenticación de doble factor (TOTP).
-*   **Historial y Saldos**: Consulta rápida de horas trabajadas y días de vacaciones restantes.
+### Backend & Seguridad
+*   **Supabase**: Base de datos PostgreSQL, Autenticación y Storage.
+*   **Row Level Security (RLS)**: Protección de datos a nivel de registro.
+*   **Edge Functions**: Lógica de servidor escalable.
+
+### Frontend Web
+*   **Next.js 16 (React 19)**: Interfaz de administración rápida y SEO-friendly.
+*   **Tailwind CSS**: Diseño moderno y profesional.
+*   **Framer Motion**: Animaciones fluidas.
+
+### Aplicación Móvil
+*   **React Native (Expo)**: Aplicación nativa para iOS y Android con geolocalización integrada.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🚀 Guía de Instalación desde Cero
 
-| Capa | Tecnología |
-| :--- | :--- |
-| **Backend** | Supabase (PostgreSQL, RLS, Edge Functions, pg_cron) |
-| **Frontend Web** | Next.js 15+, TypeScript, Tailwind CSS 4, Shadcn/UI |
-| **Mobile** | Expo (React Native), Expo Router, NativeWind |
-| **Seguridad** | 2FA personalizado (RFC 6238) con PL/pgSQL |
+Sigue estos pasos para desplegar el proyecto en un entorno de desarrollo o producción:
 
----
-
-## ⚙️ Guía de Instalación desde 0
-
-### 1. Requisitos Previos
-*   [Node.js 20+](https://nodejs.org/)
-*   [Docker](https://www.docker.com/) (para ejecución local de Supabase)
-*   [Expo CLI](https://docs.expo.dev/get-started/installation/)
-
-### 2. Configuración del Backend (Supabase)
+### 1. Clonar el repositorio
 ```bash
-# Instalar Supabase CLI si no lo tienes
-npm install supabase --save-dev
+git clone https://github.com/chdeimos/control-horario.git
+cd control-horario
+```
 
+### 2. Configurar la Base de Datos (Supabase)
+Es necesario tener instalado [Docker](https://www.docker.com/) y la [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
+
+```bash
 # Iniciar servicios locales
 npx supabase start
 
-# Aplicar migraciones para crear las tablas y lógica 2FA
-npx supabase db reset
+# Aplicar migraciones
+npx supabase migration up
 ```
 
-### 3. Configuración de la Aplicación Web
+### 3. Configurar variables de entorno
+
+Crea un archivo `.env.local` en la carpeta `/web`:
+```env
+NEXT_PUBLIC_SUPABASE_URL=tu_url_de_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
+```
+
+### 4. Instalar dependencias e iniciar la Web
 ```bash
 cd web
-# Copiar variables de entorno
-cp .env.local.example .env.local
-# Instalar dependencias
 npm install
-# Iniciar servidor de desarrollo
 npm run dev
 ```
 
-### 4. Configuración de la Aplicación Móvil
+### 5. Iniciar la Aplicación Móvil
 ```bash
-cd mobile
-# Instalar dependencias
+cd ../mobile
 npm install
-# Iniciar servidor Expo
 npx expo start
 ```
 
 ---
 
-## 📸 Pantallas del Proyecto
+## 📸 Capturas de Pantalla
 
-*Próximamente: Se recomienda añadir aquí capturas de pantalla de las siguientes rutas:*
-- `web/app/dashboard` (Vista general)
-- `mobile/app/login` (Pantalla de login con 2FA)
-- `web/app/settings` (Personalización de marca)
+*Próximamente estaremos añadiendo capturas detalladas de la Interfaz de Administración, el Modo Kiosco y la App Móvil.*
 
-## ⚖️ Cumplimiento Legal
-Este software ha sido diseñado para ayudar a las empresas a cumplir con el **Registro Jornada (Real Decreto-ley 8/2019)** en España, garantizando la trazabilidad de los horarios y la custodia de los datos durante los 4 años legales requeridos.
-
----
-Creado con ❤️ por **CHDeimos** - 2026
+## 📄 Licencia
+Este proyecto es propiedad de **ControlPro**. Todos los derechos reservados.
