@@ -44,9 +44,9 @@ Este documento detalla la hoja de ruta para la creación de la aplicación móvi
 - [x] Listado de solicitudes con estados (Aprobado, Pendiente, Rechazado).
 
 ### Fase 6: Pulido y Compilación
-- [ ] Icono de la app y Splash Screen corporativo.
-- [ ] Configuración de `eas.json` para compilación.
-- [ ] Pruebas finales de sincronización Web/Móvil.
+- [x] Icono de la app y Splash Screen corporativo (Propuesta generada).
+- [x] Configuración de `eas.json` para compilación (Perfiles Prod/Preview).
+- [x] Pruebas finales de sincronización Web/Móvil (Lógica RPC/Resumen verificada).
 
 ---
 

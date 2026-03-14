@@ -44,7 +44,7 @@ BEGIN
             v_buffer := (v_buffer << 5) | v_char_val;
             v_bits_left := v_bits_left + 5;
             IF v_bits_left >= 8 THEN
-                v_result_bytes := v_result_bytes || set_byte('\x00'::BYTEA, 0, (v_buffer >> (v_bits_left - 8)) & 255);
+                v_result_bytes := v_result_bytes || set_byte('\x00'::BYTEA, 0, ((v_buffer >> (v_bits_left - 8)) & 255)::INTEGER);
                 v_bits_left := v_bits_left - 8;
             END IF;
         END IF;
